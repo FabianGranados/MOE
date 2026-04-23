@@ -199,7 +199,15 @@ export function Shell({
               transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             >
               {view === 'list' && section === 'hoy' && (
-                <HoyView events={eventosVisibles} onOpen={openEvent} onNew={openNew} />
+                <HoyView
+                  events={eventosVisibles}
+                  currentUser={currentUser}
+                  rangosComision={rangosComision}
+                  onOpen={openEvent}
+                  onNew={openNew}
+                  onMarcarVendida={marcarVendida}
+                  onMarcarPerdida={marcarPerdida}
+                />
               )}
               {view === 'list' && section === 'dashboard' && (
                 <DashboardView events={events} onOpen={openEvent} />

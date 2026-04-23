@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
+import { ContactActions } from '../shared/ContactActions.jsx';
 import { money } from '../../utils/format.js';
 import { calcTotal } from '../../utils/calculos.js';
 
@@ -36,11 +37,10 @@ export function Seccion({ title, subtitle, tone, items, onOpen }) {
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.04, duration: 0.25 }}
-            onClick={() => onOpen(ev.id)}
-            className="card-hover p-4 cursor-pointer flex items-center gap-3 active:scale-[0.99] transition"
+            className="card-hover p-4 flex items-center gap-3"
           >
             <div className={`w-2.5 h-2.5 rounded-full ${t.dot} flex-shrink-0`} />
-            <div className="flex-1 min-w-0">
+            <div onClick={() => onOpen(ev.id)} className="flex-1 min-w-0 cursor-pointer">
               <div className="flex items-center gap-2 text-[10px] font-mono text-fg-muted">
                 <span>{ev.numeroEvento}-{ev.version}</span>
                 <span>·</span>
@@ -49,7 +49,13 @@ export function Seccion({ title, subtitle, tone, items, onOpen }) {
               <h3 className="text-sm font-semibold truncate text-fg">{ev.razonSocial}</h3>
               <div className={`text-[11px] mt-0.5 font-medium ${t.txt}`}>{razon}</div>
             </div>
-            <div className="text-right flex-shrink-0">
+            <ContactActions
+              telefono={ev.contactoTelefono}
+              email={ev.contactoEmail}
+              cliente={ev.contactoNombre || ev.razonSocial}
+              size="sm"
+            />
+            <div onClick={() => onOpen(ev.id)} className="text-right flex-shrink-0 cursor-pointer">
               <div className="text-[9px] text-fg-subtle uppercase tracking-wider font-semibold">Total</div>
               <div className="text-xs font-mono font-bold text-fg">{money(calcTotal(ev))}</div>
             </div>

@@ -4,11 +4,13 @@ import { FileText, Lock, Plus, Search } from 'lucide-react';
 import { PageHeader } from '../shared/PageHeader.jsx';
 import { EmptyState } from '../shared/EmptyState.jsx';
 import { EstadoBadge } from '../shared/Estado.jsx';
+import { ContactActions } from '../shared/ContactActions.jsx';
 import { ModalVender } from './ModalVender.jsx';
 import { ModalPerder } from './ModalPerder.jsx';
 import { ESTADOS } from '../../constants.js';
 import { money, fmtFecha } from '../../utils/format.js';
 import { aplicaIva, calcTotal } from '../../utils/calculos.js';
+import { semaforo } from '../../utils/semaforo.js';
 
 export function LeadsView({ events, currentUser, onOpen, onNew, onMarcarVendida, onMarcarPerdida, onNuevaVersion }) {
   const [search, setSearch] = useState('');
@@ -82,15 +84,18 @@ export function LeadsView({ events, currentUser, onOpen, onNew, onMarcarVendida,
         <div className="space-y-2">
           {filtered.map((e, idx) => {
             const puedeAccion = e.finalizado && e.estado === 'EN ESPERA';
+            const sem = semaforo(e);
             return (
               <motion.div
                 key={e.id}
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(idx * 0.02, 0.3), duration: 0.2 }}
-                className="card-hover p-3"
+                className="card-hover p-3 relative overflow-hidden"
               >
-                <div className="flex items-start gap-3">
+                <div className={`absolute left-0 top-0 bottom-0 w-1 ${sem.dot}`} />
+
+                <div className="flex items-start gap-3 pl-1.5">
                   <div onClick={() => onOpen(e.id)} className="flex-1 cursor-pointer min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <span className="font-mono text-[11px] font-semibold bg-surface-sunken px-2 py-0.5 rounded">
@@ -117,42 +122,56 @@ export function LeadsView({ events, currentUser, onOpen, onNew, onMarcarVendida,
                     <div className="text-sm font-semibold truncate text-fg">
                       {e.razonSocial || <span className="text-fg-subtle">Sin nombre</span>}
                     </div>
-                    <div className="text-[11px] text-fg-muted mt-0.5">
-                      {e.fechaEvento ? fmtFecha(e.fechaEvento) : '—'} · <span className="font-mono font-semibold">{money(calcTotal(e))}</span>
-                      {!aplicaIva(e) && <span className="ml-1 text-fg-subtle">(sin IVA)</span>}
+                    <div className="text-[11px] text-fg-muted mt-0.5 flex items-center gap-2 flex-wrap">
+                      <span>{e.fechaEvento ? fmtFecha(e.fechaEvento) : '—'}</span>
+                      <span>·</span>
+                      <span className="font-mono font-semibold">{money(calcTotal(e))}</span>
+                      {!aplicaIva(e) && <span className="text-fg-subtle">(sin IVA)</span>}
                     </div>
+                    {sem.nivel !== 'gris' && (
+                      <div className={`text-[10px] mt-0.5 font-medium ${sem.text}`}>● {sem.razon}</div>
+                    )}
                   </div>
-                  <div className="flex flex-col gap-1 flex-shrink-0">
-                    {puedeAccion && (
-                      <>
-                        <button
-                          onClick={() => setAccion({ tipo: 'vender', ev: e })}
-                          className="text-[10px] px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-semibold transition active:scale-95"
-                        >
-                          ✓ Vendida
-                        </button>
-                        <button
-                          onClick={() => setAccion({ tipo: 'perder', ev: e })}
-                          className="text-[10px] px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-full font-semibold transition active:scale-95"
-                        >
-                          ✗ Perdida
-                        </button>
+
+                  <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                    <ContactActions
+                      telefono={e.contactoTelefono}
+                      email={e.contactoEmail}
+                      cliente={e.contactoNombre || e.razonSocial}
+                      size="sm"
+                    />
+                    <div className="flex flex-col gap-1">
+                      {puedeAccion && (
+                        <>
+                          <button
+                            onClick={() => setAccion({ tipo: 'vender', ev: e })}
+                            className="text-[10px] px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-semibold transition active:scale-95"
+                          >
+                            ✓ Vendida
+                          </button>
+                          <button
+                            onClick={() => setAccion({ tipo: 'perder', ev: e })}
+                            className="text-[10px] px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-full font-semibold transition active:scale-95"
+                          >
+                            ✗ Perdida
+                          </button>
+                          <button
+                            onClick={() => onNuevaVersion(e)}
+                            className="text-[10px] px-2.5 py-1 border border-border hover:bg-surface-sunken text-fg-muted rounded-full font-medium transition"
+                          >
+                            + Versión
+                          </button>
+                        </>
+                      )}
+                      {e.estado === 'VENDIDO' && (
                         <button
                           onClick={() => onNuevaVersion(e)}
                           className="text-[10px] px-2.5 py-1 border border-border hover:bg-surface-sunken text-fg-muted rounded-full font-medium transition"
                         >
                           + Versión
                         </button>
-                      </>
-                    )}
-                    {e.estado === 'VENDIDO' && (
-                      <button
-                        onClick={() => onNuevaVersion(e)}
-                        className="text-[10px] px-2.5 py-1 border border-border hover:bg-surface-sunken text-fg-muted rounded-full font-medium transition"
-                      >
-                        + Versión
-                      </button>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               </motion.div>

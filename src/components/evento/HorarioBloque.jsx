@@ -116,8 +116,15 @@ export function HorarioBloque({ titulo, valor, onChange, fechaEvento, esDesmonta
           </button>
         </div>
       ) : (
-        <Fld label="Hora exacta" required>
-          <input type="time" value={valor.hora || ''} onChange={(e) => onChange({ ...valor, hora: e.target.value })} className="input" />
+        <Fld label="Hora exacta (formato 24h)" required hint="ej. 14:30">
+          <input
+            type="time"
+            step={300}
+            value={valor.hora || ''}
+            onChange={(e) => onChange({ ...valor, hora: e.target.value })}
+            className="input font-mono text-base tracking-wider"
+            style={{ fontVariantNumeric: 'tabular-nums' }}
+          />
         </Fld>
       )}
 
@@ -125,7 +132,7 @@ export function HorarioBloque({ titulo, valor, onChange, fechaEvento, esDesmonta
         <div className="mt-3 pt-3 border-t border-border bg-surface rounded-lg p-2">
           <div className="text-[9px] uppercase tracking-wider text-fg-muted font-bold mb-0.5">Resumen</div>
           <div className="text-xs font-semibold text-fg">
-            {fmtFechaCorta(valor.fecha)} · {esCerrado ? (valor.hora || 'sin hora') : FRANJAS[valor.franja]}
+            {fmtFechaCorta(valor.fecha)} · {esCerrado ? (valor.hora ? `${valor.hora} h` : 'sin hora') : FRANJAS[valor.franja]}
           </div>
         </div>
       )}

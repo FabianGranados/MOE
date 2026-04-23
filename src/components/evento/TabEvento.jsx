@@ -1,4 +1,4 @@
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Truck } from 'lucide-react';
 import { Fld } from '../shared/Fld.jsx';
 import { HorarioBloque, HorarioHora } from './HorarioBloque.jsx';
 import { HistorialCambios } from './HistorialCambios.jsx';
@@ -11,12 +11,20 @@ const DEFAULT_HORARIO = { tipo: 'abierto', franja: 'tarde', hora: '' };
 const DEFAULT_PERSONAS = [{ nombre: '', celular: '' }, { nombre: '', celular: '' }];
 
 export function TabEvento({ ev, set }) {
+  const vendido = ev.estado === 'VENDIDO';
   return (
     <div className="space-y-5">
-      <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-xl p-3 text-xs text-emerald-900 dark:text-emerald-300 flex items-center gap-2">
-        <CheckCircle2 className="w-4 h-4" />
-        <span><strong>Evento VENDIDO</strong>{ev.fechaEvento && <> · <strong>{fmtFechaLarga(ev.fechaEvento)}</strong></>}</span>
-      </div>
+      {vendido ? (
+        <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-xl p-3 text-xs text-emerald-900 dark:text-emerald-300 flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4" />
+          <span><strong>Evento VENDIDO</strong>{ev.fechaEvento && <> · <strong>{fmtFechaLarga(ev.fechaEvento)}</strong></>}</span>
+        </div>
+      ) : (
+        <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-xl p-3 text-xs text-amber-900 dark:text-amber-300 flex items-start gap-2">
+          <Truck className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <span>Estos datos van en la cotización y forman la <strong>Remisión de Entrega</strong> que usará logística cuando se confirme la venta.</span>
+        </div>
+      )}
 
       <div>
         <div className="text-[10px] font-bold uppercase tracking-wider text-fg-muted mb-2">Horario del evento</div>

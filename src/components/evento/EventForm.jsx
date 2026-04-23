@@ -88,11 +88,11 @@ export function EventForm({
   const puedeEnviar = errores.length === 0;
 
   const tabs = [
-    { k: 'comercial', l: 'Comercial', i: User },
-    { k: 'cotizador', l: 'Cotizador', i: Package }
+    { k: 'comercial', l: 'Cliente',    i: User },
+    { k: 'logistica', l: 'Logística',  i: Calendar },
+    { k: 'cotizador', l: 'Productos',  i: Package }
   ];
   if (vendido) {
-    tabs.push({ k: 'evento', l: 'Evento', i: Calendar });
     tabs.push({ k: 'pagos', l: 'Pagos', i: DollarSign });
   }
 
@@ -316,6 +316,7 @@ export function EventForm({
                 onFinalize={() => setShowConfirmFinalize(true)}
               />
             )}
+            {tab === 'logistica' && <TabEvento ev={ev} set={set} />}
             {tab === 'cotizador' && (
               <Cotizador
                 items={ev.items || []}
@@ -328,7 +329,6 @@ export function EventForm({
                 evId={ev.id}
               />
             )}
-            {tab === 'evento' && <TabEvento ev={ev} set={set} />}
             {tab === 'pagos' && <TabPagos ev={ev} set={set} />}
           </div>
         </div>

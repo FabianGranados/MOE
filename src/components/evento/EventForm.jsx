@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import {
-  ArrowLeft, Calendar, CheckCircle2, DollarSign, FileText, Loader2, Lock, Package, Plus, Send, Share2, ShieldCheck, Trash2, User
+  ArrowLeft, ArrowRight, Calendar, CheckCircle2, DollarSign, FileText, Loader2, Lock, Package, Plus, Send, Share2, ShieldCheck, Trash2, User
 } from 'lucide-react';
 import { Confirm } from '../shared/Confirm.jsx';
 import { Fld } from '../shared/Fld.jsx';
+import { Stepper } from '../shared/Stepper.jsx';
+import { useDirtyGuard } from '../../hooks/useDirtyGuard.jsx';
 import { Cotizador } from './Cotizador.jsx';
 import { TabEvento } from './TabEvento.jsx';
 import { TabPagos } from './TabPagos.jsx';
@@ -16,14 +18,18 @@ import {
 } from '../../constants.js';
 import { money, tiempoRelativo } from '../../utils/format.js';
 import { aplicaIva } from '../../utils/calculos.js';
-import { validarEventoBorrador } from '../../utils/validaciones.js';
+import { validarDatosCliente, validarEventoBorrador } from '../../utils/validaciones.js';
 
 export function EventForm({
   initial, onCancel, onSave, onFinalize, onDelete, onNuevaVersion,
   catalogo, allEvents, isNew
 }) {
+  const { setDirty, confirmLeave } = useDirtyGuard();
   const [ev, setEv] = useState(initial);
+  const [wizardStep, setWizardStep] = useState(0);
+  const [mode, setMode] = useState(isNew ? 'wizard' : 'tabs');
   const [tab, setTab] = useState('comercial');
+  const [wizardErr, setWizardErr] = useState('');
   const [showConfirmFinalize, setShowConfirmFinalize] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [showShare, setShowShare] = useState(false);
@@ -40,15 +46,19 @@ export function EventForm({
     if (bloqueado) return;
     if (skipAutoSave.current) { skipAutoSave.current = false; return; }
     setSaveStatus('dirty');
+    setDirty(true);
     const timer = setTimeout(async () => {
       setSaveStatus('saving');
       await onSave(ev);
       setLastSaved(new Date());
       setSaveStatus('saved');
+      setDirty(false);
     }, 1500);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ev, bloqueado]);
+
+  useEffect(() => () => setDirty(false), [setDirty]);
 
   useEffect(() => {
     const i = setInterval(() => setTick((t) => t + 1), 30000);
@@ -153,59 +163,151 @@ export function EventForm({
         </motion.div>
       )}
 
-      <div className="card overflow-hidden">
-        <div className="relative flex border-b border-border bg-surface-sunken overflow-x-auto scrollbar-none">
-          {tabs.map((t) => {
-            const Icon = t.i;
-            const active = tab === t.k;
-            return (
-              <button
-                key={t.k}
-                onClick={() => setTab(t.k)}
-                className={`relative flex items-center gap-2 px-4 py-3 text-xs font-medium whitespace-nowrap transition ${
-                  active ? 'bg-surface text-fg' : 'text-fg-muted hover:text-fg'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" /> {t.l}
-                {active && (
-                  <motion.div
-                    layoutId="event-tab-underline"
-                    className="absolute left-0 right-0 -bottom-px h-0.5 bg-brand rounded-full"
-                    transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-                  />
-                )}
-              </button>
-            );
-          })}
-        </div>
+      {mode === 'wizard' ? (
+        <div className="card p-5">
+          <Stepper
+            current={wizardStep}
+            steps={[
+              { key: 'cliente',   label: 'Cliente',   hint: 'Datos del comprador' },
+              { key: 'productos', label: 'Productos', hint: 'Cotizador' }
+            ]}
+          />
 
-        <div className="p-5">
-          {tab === 'comercial' && (
-            <TabComercial
-              ev={ev}
-              set={set}
-              bloqueado={bloqueado}
-              puedeEnviar={puedeEnviar}
-              errores={errores}
-              onFinalize={() => setShowConfirmFinalize(true)}
-            />
+          <motion.div
+            key={`wiz-${wizardStep}`}
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {wizardStep === 0 && (
+              <TabComercial
+                ev={ev}
+                set={set}
+                bloqueado={bloqueado}
+                modoWizard
+              />
+            )}
+            {wizardStep === 1 && (
+              <Cotizador
+                items={ev.items || []}
+                catalogo={catalogo}
+                addItem={addItem}
+                updateItem={updateItem}
+                removeItem={removeItem}
+                events={allEvents || []}
+                fechaEvento={ev.fechaEvento}
+                evId={ev.id}
+              />
+            )}
+          </motion.div>
+
+          {wizardErr && (
+            <div className="mt-4 bg-red-50 dark:bg-red-500/10 border-2 border-red-200 dark:border-red-500/30 rounded-xl p-3">
+              <strong className="text-xs text-red-900 dark:text-red-300">Faltan: {wizardErr}</strong>
+            </div>
           )}
-          {tab === 'cotizador' && (
-            <Cotizador
-              items={ev.items || []}
-              catalogo={catalogo}
-              addItem={addItem}
-              updateItem={updateItem}
-              removeItem={removeItem}
-              events={allEvents || []}
-              fechaEvento={ev.fechaEvento}
-              evId={ev.id}
-            />
+
+          <div className="mt-5 pt-5 border-t-2 border-border flex items-center justify-between gap-2">
+            {wizardStep > 0 ? (
+              <button onClick={() => { setWizardStep(wizardStep - 1); setWizardErr(''); }} className="btn-ghost">
+                <ArrowLeft className="w-3.5 h-3.5" /> Atrás
+              </button>
+            ) : <div />}
+
+            {wizardStep === 0 && (
+              <button
+                onClick={() => {
+                  const errs = validarDatosCliente(ev);
+                  if (errs.length) { setWizardErr(errs.join(', ')); return; }
+                  setWizardErr('');
+                  setWizardStep(1);
+                }}
+                className="btn-primary"
+              >
+                Siguiente <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+
+            {wizardStep === 1 && (
+              <button
+                onClick={() => {
+                  if (!puedeEnviar) { setWizardErr(errores.join(', ')); return; }
+                  setWizardErr('');
+                  setShowConfirmFinalize(true);
+                }}
+                className="btn-success"
+              >
+                <Send className="w-3.5 h-3.5" /> Finalizar cotización
+              </button>
+            )}
+          </div>
+
+          {wizardStep === 0 && (
+            <div className="mt-3 text-center">
+              <button
+                onClick={() => setMode('tabs')}
+                className="text-[11px] text-fg-subtle hover:text-fg-muted underline underline-offset-2"
+              >
+                Prefiero ver todo como pestañas
+              </button>
+            </div>
           )}
-          {tab === 'evento' && <TabEvento ev={ev} set={set} />}
-          {tab === 'pagos' && <TabPagos ev={ev} set={set} />}
         </div>
-      </div>
+      ) : (
+        <div className="card overflow-hidden">
+          <div className="relative flex border-b border-border bg-surface-sunken overflow-x-auto scrollbar-none">
+            {tabs.map((t) => {
+              const Icon = t.i;
+              const active = tab === t.k;
+              return (
+                <button
+                  key={t.k}
+                  onClick={() => setTab(t.k)}
+                  className={`relative flex items-center gap-2 px-4 py-3 text-xs font-medium whitespace-nowrap transition ${
+                    active ? 'bg-surface text-fg' : 'text-fg-muted hover:text-fg'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" /> {t.l}
+                  {active && (
+                    <motion.div
+                      layoutId="event-tab-underline"
+                      className="absolute left-0 right-0 -bottom-px h-0.5 bg-brand rounded-full"
+                      transition={{ type: 'spring', damping: 28, stiffness: 350 }}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="p-5">
+            {tab === 'comercial' && (
+              <TabComercial
+                ev={ev}
+                set={set}
+                bloqueado={bloqueado}
+                puedeEnviar={puedeEnviar}
+                errores={errores}
+                onFinalize={() => setShowConfirmFinalize(true)}
+              />
+            )}
+            {tab === 'cotizador' && (
+              <Cotizador
+                items={ev.items || []}
+                catalogo={catalogo}
+                addItem={addItem}
+                updateItem={updateItem}
+                removeItem={removeItem}
+                events={allEvents || []}
+                fechaEvento={ev.fechaEvento}
+                evId={ev.id}
+              />
+            )}
+            {tab === 'evento' && <TabEvento ev={ev} set={set} />}
+            {tab === 'pagos' && <TabPagos ev={ev} set={set} />}
+          </div>
+        </div>
+      )}
 
       <Confirm
         open={showConfirmFinalize}
@@ -260,7 +362,7 @@ function SaveIndicator({ status, lastSaved, bloqueado }) {
   return <span className="inline-flex items-center gap-1.5 text-[11px] text-fg-subtle mt-1">Autoguardado activo</span>;
 }
 
-function TabComercial({ ev, set, bloqueado, puedeEnviar, errores, onFinalize }) {
+function TabComercial({ ev, set, bloqueado, puedeEnviar, errores, onFinalize, modoWizard }) {
   const personaActual = TIPOS_PERSONA.find((p) => p.key === ev.tipoPersona) || TIPOS_PERSONA[0];
   const docsDisponibles = personaActual.docs;
   const labelRazonSocial = ev.tipoPersona === 'NATURAL' ? 'Nombre completo' : 'Razón social';
@@ -431,7 +533,7 @@ function TabComercial({ ev, set, bloqueado, puedeEnviar, errores, onFinalize }) 
         />
       </Section>
 
-      {!bloqueado && (
+      {!bloqueado && !modoWizard && (
         <div className="pt-5 border-t-2 border-border">
           {!puedeEnviar && (
             <div className="bg-red-50 dark:bg-red-500/10 border-2 border-red-200 dark:border-red-500/30 rounded-xl p-3 mb-3">

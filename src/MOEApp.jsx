@@ -2,6 +2,7 @@ import { Login } from './components/auth/Login.jsx';
 import { Shell } from './components/shell/Shell.jsx';
 import { SpinnerPage } from './components/shared/Skeleton.jsx';
 import { PRODUCTOS_INICIAL, RANGOS_COMISION_DEFAULT } from './constants.js';
+import { DirtyGuardProvider } from './hooks/useDirtyGuard.jsx';
 import { usePersistedState } from './hooks/usePersistedState.js';
 import { useSession } from './hooks/useSession.js';
 
@@ -18,15 +19,17 @@ export default function MOEApp() {
   if (!currentUser) return <Login onLogin={login} />;
 
   return (
-    <Shell
-      currentUser={currentUser}
-      events={events}
-      persistEvents={persistEvents}
-      catalogo={catalogo}
-      persistCatalogo={persistCatalogo}
-      rangosComision={rangos}
-      persistRangos={persistRangos}
-      onLogout={logout}
-    />
+    <DirtyGuardProvider>
+      <Shell
+        currentUser={currentUser}
+        events={events}
+        persistEvents={persistEvents}
+        catalogo={catalogo}
+        persistCatalogo={persistCatalogo}
+        rangosComision={rangos}
+        persistRangos={persistRangos}
+        onLogout={logout}
+      />
+    </DirtyGuardProvider>
   );
 }

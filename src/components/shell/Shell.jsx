@@ -16,6 +16,7 @@ import { CatalogoView } from '../catalogo/CatalogoView.jsx';
 import { EventForm } from '../evento/EventForm.jsx';
 import { useHotkey } from '../../hooks/useHotkey.js';
 import { useTheme } from '../../hooks/useTheme.js';
+import { useDirtyGuard } from '../../hooks/useDirtyGuard.jsx';
 import { newEvent, nextNumero, diffDatos } from '../../utils/eventos.js';
 
 const MENU = [
@@ -31,6 +32,7 @@ export function Shell({
   rangosComision, persistRangos, onLogout
 }) {
   const { theme, toggle: toggleTheme } = useTheme();
+  const { confirmLeave } = useDirtyGuard();
   const [section, setSection] = useState(() =>
     currentUser.rol === 'gerencia_general' ? 'dashboard' : 'hoy'
   );
@@ -39,8 +41,25 @@ export function Shell({
   const [menuOpen, setMenuOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
 
+  const navigateTo = (k) => {
+    if (!confirmLeave()) return;
+    setSection(k);
+    setView('list');
+    setActiveId(null);
+  };
+  const openNew = () => {
+    if (!confirmLeave()) return;
+    setView('new');
+    setSection('leads');
+  };
+  const goBackToList = () => {
+    if (!confirmLeave()) return;
+    setView('list');
+    setActiveId(null);
+  };
+
   useHotkey('mod+k', () => setCmdOpen(true), []);
-  useHotkey('mod+n', () => { setView('new'); setSection('leads'); }, []);
+  useHotkey('mod+n', openNew, []);
 
   const menu = useMemo(
     () => MENU.filter((m) => m.roles.includes(currentUser.rol)),
@@ -151,7 +170,7 @@ export function Shell({
       <Sidebar
         menu={menu}
         section={section}
-        onNavigate={(k) => { setSection(k); setView('list'); setActiveId(null); }}
+        onNavigate={navigateTo}
         currentUser={currentUser}
         onLogout={onLogout}
         theme={theme}
@@ -180,7 +199,7 @@ export function Shell({
               transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             >
               {view === 'list' && section === 'hoy' && (
-                <HoyView events={eventosVisibles} onOpen={openEvent} onNew={() => setView('new')} />
+                <HoyView events={eventosVisibles} onOpen={openEvent} onNew={openNew} />
               )}
               {view === 'list' && section === 'dashboard' && (
                 <DashboardView events={events} onOpen={openEvent} />
@@ -190,7 +209,7 @@ export function Shell({
                   events={eventosVisibles}
                   currentUser={currentUser}
                   onOpen={openEvent}
-                  onNew={() => setView('new')}
+                  onNew={openNew}
                   onMarcarVendida={marcarVendida}
                   onMarcarPerdida={marcarPerdida}
                   onNuevaVersion={nuevaVersion}
@@ -211,7 +230,7 @@ export function Shell({
               {view === 'new' && (
                 <EventForm
                   initial={newEvent(nextNumero(events), currentUser)}
-                  onCancel={() => setView('list')}
+                  onCancel={goBackToList}
                   onSave={saveEvent}
                   onFinalize={finalizar}
                   catalogo={catalogo}
@@ -223,7 +242,7 @@ export function Shell({
                 <EventForm
                   key={activeEv.id}
                   initial={activeEv}
-                  onCancel={() => setView('list')}
+                  onCancel={goBackToList}
                   onSave={saveEvent}
                   onFinalize={finalizar}
                   onDelete={() => deleteEvent(activeEv.id)}
@@ -240,7 +259,7 @@ export function Shell({
       <MobileNav
         menu={menu}
         section={section}
-        onNavigate={(k) => { setSection(k); setView('list'); setActiveId(null); }}
+        onNavigate={navigateTo}
       />
 
       <CommandPalette
@@ -248,9 +267,9 @@ export function Shell({
         onClose={() => setCmdOpen(false)}
         events={eventosVisibles}
         menu={menu}
-        onNavigate={(k) => { setSection(k); setView('list'); setActiveId(null); }}
+        onNavigate={navigateTo}
         onOpenEvent={openEvent}
-        onNew={() => { setSection('leads'); setView('new'); }}
+        onNew={openNew}
       />
     </div>
   );

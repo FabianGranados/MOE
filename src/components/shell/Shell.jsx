@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import {
   Briefcase, DollarSign, LayoutDashboard, Package, Sun
@@ -18,6 +18,7 @@ import { useHotkey } from '../../hooks/useHotkey.js';
 import { useTheme } from '../../hooks/useTheme.js';
 import { useDirtyGuard } from '../../hooks/useDirtyGuard.jsx';
 import { newEvent, nextNumero, diffDatos } from '../../utils/eventos.js';
+import { ErrorBoundary } from '../shared/ErrorBoundary.jsx';
 
 const MENU = [
   { key: 'hoy',        label: 'HOY',                 short: 'Hoy',      icon: Sun,             roles: ['coord_comercial', 'asesor_comercial'] },
@@ -190,13 +191,12 @@ export function Shell({
         />
 
         <main className="p-4 md:p-8 max-w-[1400px] mx-auto">
-          <AnimatePresence mode="wait">
+          <ErrorBoundary key={`${section}-${view}-${activeId || ''}-boundary`}>
             <motion.div
               key={`${section}-${view}-${activeId || ''}`}
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
             >
               {view === 'list' && section === 'hoy' && (
                 <HoyView
@@ -260,7 +260,7 @@ export function Shell({
                 />
               )}
             </motion.div>
-          </AnimatePresence>
+          </ErrorBoundary>
         </main>
       </div>
 

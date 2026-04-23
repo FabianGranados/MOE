@@ -7,6 +7,7 @@ import {
 import { Confirm } from '../shared/Confirm.jsx';
 import { Fld } from '../shared/Fld.jsx';
 import { Stepper } from '../shared/Stepper.jsx';
+import { HorarioBloque } from './HorarioBloque.jsx';
 import { useDirtyGuard } from '../../hooks/useDirtyGuard.jsx';
 import { Cotizador } from './Cotizador.jsx';
 import { TabEvento } from './TabEvento.jsx';
@@ -95,8 +96,18 @@ export function EventForm({
   }
 
   const handleDelete = () => {
+    setDirty(false);
     onDelete();
     toast('Cotización eliminada');
+  };
+
+  const handleFinalize = () => {
+    setDirty(false);
+    onFinalize(ev);
+  };
+
+  const handleCancel = () => {
+    onCancel();
   };
 
   return (
@@ -168,8 +179,9 @@ export function EventForm({
           <Stepper
             current={wizardStep}
             steps={[
-              { key: 'cliente',   label: 'Cliente',   hint: 'Datos del comprador' },
-              { key: 'productos', label: 'Productos', hint: 'Cotizador' }
+              { key: 'cliente',   label: 'Cliente',    hint: 'Datos del comprador' },
+              { key: 'logistica', label: 'Logística',  hint: 'Montaje y dirección' },
+              { key: 'productos', label: 'Productos',  hint: 'Cotizador' }
             ]}
           />
 
@@ -188,6 +200,9 @@ export function EventForm({
               />
             )}
             {wizardStep === 1 && (
+              <TabLogistica ev={ev} set={set} />
+            )}
+            {wizardStep === 2 && (
               <Cotizador
                 items={ev.items || []}
                 catalogo={catalogo}
@@ -229,6 +244,15 @@ export function EventForm({
             )}
 
             {wizardStep === 1 && (
+              <button
+                onClick={() => { setWizardErr(''); setWizardStep(2); }}
+                className="btn-primary"
+              >
+                Siguiente <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+
+            {wizardStep === 2 && (
               <button
                 onClick={() => {
                   if (!puedeEnviar) { setWizardErr(errores.join(', ')); return; }
@@ -314,7 +338,7 @@ export function EventForm({
         onCancel={() => setShowConfirmFinalize(false)}
         onConfirm={() => {
           setShowConfirmFinalize(false);
-          onFinalize(ev);
+          handleFinalize();
         }}
         title="¿Finalizar esta cotización?"
         description={`La cotización ${ev.numeroEvento}-${ev.version} quedará bloqueada. Para cambios deberás crear una nueva versión.`}
@@ -570,6 +594,116 @@ function Section({ title, hint, children }) {
         {hint && <span className="text-[10px] text-fg-subtle">{hint}</span>}
       </div>
       {children}
+    </div>
+  );
+}
+
+function TabLogistica({ ev, set }) {
+  const montaje = ev.montaje || { fecha: '', tipo: 'abierto', franja: 'manana', hora: '' };
+  const desmontaje = ev.desmontaje || { fecha: '', tipo: 'abierto', franja: 'tarde', hora: '' };
+
+  return (
+    <div className="space-y-5">
+      <div className="bg-surface-sunken border border-border rounded-xl p-3 text-[11px] text-fg-muted">
+        <strong className="text-fg">Opcional en esta etapa.</strong> Estos datos son importantes para bodega y logística.
+        Si ya los tienes, llénalos. Si no, puedes completarlos después.
+      </div>
+
+      <Section title="Dirección del evento">
+        <Fld label="Dirección exacta">
+          <input
+            value={ev.direccion || ''}
+            onChange={(e) => set({ direccion: e.target.value })}
+            placeholder="Cra 11 # 82-01, Bogotá"
+            className="input"
+          />
+        </Fld>
+        <div className="mt-3">
+          <Fld label="Link Google Maps">
+            <div className="flex gap-2">
+              <input
+                value={ev.mapsUrl || ''}
+                onChange={(e) => set({ mapsUrl: e.target.value })}
+                placeholder="https://maps.google.com/..."
+                className="input flex-1"
+              />
+              {ev.mapsUrl && (
+                <a
+                  href={ev.mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 flex items-center bg-fg text-surface rounded-lg text-[11px] font-medium"
+                >
+                  Abrir
+                </a>
+              )}
+            </div>
+          </Fld>
+        </div>
+      </Section>
+
+      <HorarioBloque
+        titulo="🚚 Montaje / Entrega"
+        valor={montaje}
+        onChange={(m) => set({ montaje: m })}
+        fechaEvento={ev.fechaEvento}
+      />
+
+      <HorarioBloque
+        titulo="📤 Desmontaje / Recogida"
+        valor={desmontaje}
+        onChange={(m) => set({ desmontaje: m })}
+        fechaEvento={ev.fechaEvento}
+        esDesmontaje
+      />
+
+      <Section title="Contacto principal en sitio">
+        <div className="grid grid-cols-2 gap-3">
+          <Fld label="Nombre">
+            <input
+              value={ev.contactoPrincipal?.nombre || ''}
+              onChange={(e) => set({ contactoPrincipal: { ...(ev.contactoPrincipal || {}), nombre: e.target.value } })}
+              className="input"
+            />
+          </Fld>
+          <Fld label="Celular">
+            <input
+              value={ev.contactoPrincipal?.celular || ''}
+              onChange={(e) => set({ contactoPrincipal: { ...(ev.contactoPrincipal || {}), celular: e.target.value } })}
+              className="input font-mono"
+            />
+          </Fld>
+        </div>
+      </Section>
+
+      <Section title="Contacto backup (opcional)">
+        <div className="grid grid-cols-2 gap-3">
+          <Fld label="Nombre">
+            <input
+              value={ev.contactoBackup?.nombre || ''}
+              onChange={(e) => set({ contactoBackup: { ...(ev.contactoBackup || {}), nombre: e.target.value } })}
+              className="input"
+            />
+          </Fld>
+          <Fld label="Celular">
+            <input
+              value={ev.contactoBackup?.celular || ''}
+              onChange={(e) => set({ contactoBackup: { ...(ev.contactoBackup || {}), celular: e.target.value } })}
+              className="input font-mono"
+            />
+          </Fld>
+        </div>
+      </Section>
+
+      <Section title="Notas operativas">
+        <textarea
+          value={ev.notasOperativas || ''}
+          onChange={(e) => set({ notasOperativas: e.target.value })}
+          rows={3}
+          className="input resize-none"
+          placeholder="Acceso, parqueo, ascensor, precauciones..."
+        />
+      </Section>
     </div>
   );
 }

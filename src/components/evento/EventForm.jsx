@@ -10,9 +10,12 @@ import { Cotizador } from './Cotizador.jsx';
 import { TabEvento } from './TabEvento.jsx';
 import { TabPagos } from './TabPagos.jsx';
 import { ShareModal } from './ShareModal.jsx';
-import { ESTADOS, FORMAS_PAGO, TIPO_EVENTO } from '../../constants.js';
+import {
+  FORMAS_PAGO, TIPO_EVENTO, TIPOS_CLIENTE, TIPOS_DOCUMENTO_COTIZACION,
+  TIPOS_DOCUMENTO_ID, TIPOS_PERSONA
+} from '../../constants.js';
 import { money, tiempoRelativo } from '../../utils/format.js';
-import { calcIva, calcProductos, calcTotal, calcTransporte } from '../../utils/calculos.js';
+import { aplicaIva } from '../../utils/calculos.js';
 import { validarEventoBorrador } from '../../utils/validaciones.js';
 
 export function EventForm({
@@ -258,72 +261,175 @@ function SaveIndicator({ status, lastSaved, bloqueado }) {
 }
 
 function TabComercial({ ev, set, bloqueado, puedeEnviar, errores, onFinalize }) {
+  const personaActual = TIPOS_PERSONA.find((p) => p.key === ev.tipoPersona) || TIPOS_PERSONA[0];
+  const docsDisponibles = personaActual.docs;
+  const labelRazonSocial = ev.tipoPersona === 'NATURAL' ? 'Nombre completo' : 'Razón social';
+
   return (
-    <fieldset disabled={bloqueado} className="space-y-4 disabled:opacity-80">
-      <div className="grid md:grid-cols-3 gap-4">
-        <Fld label="Comercial" required>
-          <input value={ev.comercial} onChange={(e) => set({ comercial: e.target.value.toUpperCase() })} placeholder="AMMY" className="input font-mono" />
-        </Fld>
-        <Fld label="N° evento">
-          <input value={ev.numeroEvento} disabled className="input font-mono" />
-        </Fld>
-        <Fld label="Fecha creación">
-          <input type="date" value={ev.fechaCreacion} disabled className="input" />
-        </Fld>
-      </div>
+    <fieldset disabled={bloqueado} className="space-y-6 disabled:opacity-80">
 
-      <Fld label="Razón social" required>
-        <input value={ev.razonSocial} onChange={(e) => set({ razonSocial: e.target.value })} placeholder="SANTA PUBLICIDAD SAS" className="input" />
-      </Fld>
+      {/* Tipo de documento */}
+      <Section
+        title="Tipo de documento"
+        hint="Define si el total incluye IVA"
+      >
+        <div className="grid grid-cols-2 gap-2">
+          {TIPOS_DOCUMENTO_COTIZACION.map((t) => {
+            const active = (ev.tipoDocumento || 'COTIZACION') === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => set({ tipoDocumento: t.key })}
+                className={`text-left rounded-xl p-3 border-2 transition active:scale-[0.98] ${
+                  active
+                    ? 'border-brand bg-brand-softer'
+                    : 'border-border bg-surface hover:border-border-strong'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-lg">{t.icon}</span>
+                  <span className={`text-sm font-bold ${active ? 'text-brand' : 'text-fg'}`}>{t.label}</span>
+                </div>
+                <div className="text-[10px] text-fg-muted">{t.sub}</div>
+              </button>
+            );
+          })}
+        </div>
+      </Section>
 
-      <div className="grid md:grid-cols-3 gap-4">
-        <Fld label="Contacto" required>
-          <input value={ev.contactoNombre} onChange={(e) => set({ contactoNombre: e.target.value })} className="input" />
-        </Fld>
-        <Fld label="Teléfono">
-          <input value={ev.contactoTelefono} onChange={(e) => set({ contactoTelefono: e.target.value })} className="input" />
-        </Fld>
-        <Fld label="Email">
-          <input type="email" value={ev.contactoEmail} onChange={(e) => set({ contactoEmail: e.target.value })} className="input" />
-        </Fld>
-      </div>
+      {/* Quién cotiza */}
+      <Section title="Quién cotiza">
+        <div className="grid md:grid-cols-2 gap-4">
+          <Fld label="Comercial" required>
+            <input
+              value={ev.comercial}
+              onChange={(e) => set({ comercial: e.target.value.toUpperCase() })}
+              placeholder="AMMY"
+              className="input font-mono"
+            />
+          </Fld>
+          <Fld label="N° Cotización">
+            <input value={ev.numeroEvento} disabled className="input font-mono text-fg-muted" />
+          </Fld>
+        </div>
+      </Section>
 
-      <div className="grid md:grid-cols-3 gap-4">
-        <Fld label="Fecha evento" required>
-          <input type="date" value={ev.fechaEvento} onChange={(e) => set({ fechaEvento: e.target.value })} className="input" />
+      {/* Datos del cliente */}
+      <Section title="Datos del cliente">
+        <Fld label={labelRazonSocial} required>
+          <input
+            value={ev.razonSocial}
+            onChange={(e) => set({ razonSocial: e.target.value })}
+            placeholder={ev.tipoPersona === 'NATURAL' ? 'Juan Pérez' : 'SANTA PUBLICIDAD SAS'}
+            className="input"
+          />
         </Fld>
-        <Fld label="Estado">
-          <select value={ev.estado} onChange={(e) => set({ estado: e.target.value })} className="input">
-            {ESTADOS.map((x) => <option key={x}>{x}</option>)}
-          </select>
-        </Fld>
-        <Fld label="Tipo evento">
-          <select value={ev.tipoEvento} onChange={(e) => set({ tipoEvento: e.target.value })} className="input">
-            {TIPO_EVENTO.map((x) => <option key={x}>{x}</option>)}
-          </select>
-        </Fld>
-      </div>
 
-      <div className="grid md:grid-cols-4 gap-4">
-        <ReadOnlyMoney label="Productos" value={calcProductos(ev)} />
-        <ReadOnlyMoney label="Transporte/Montaje" value={calcTransporte(ev)} />
-        <ReadOnlyMoney label="IVA 19%" value={calcIva(ev)} />
-        <Fld label="TOTAL">
-          <div className="input bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 font-mono font-bold text-emerald-900 dark:text-emerald-300">
-            {money(calcTotal(ev))}
+        <div className="grid md:grid-cols-3 gap-3 mt-3">
+          <Fld label="Tipo de persona" required>
+            <select
+              value={ev.tipoPersona}
+              onChange={(e) => {
+                const nueva = e.target.value;
+                const docDefault = TIPOS_PERSONA.find((p) => p.key === nueva)?.docs[0];
+                set({ tipoPersona: nueva, tipoDocId: docDefault });
+              }}
+              className="input"
+            >
+              {TIPOS_PERSONA.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+            </select>
+          </Fld>
+          <Fld label="Tipo documento" required>
+            <select
+              value={ev.tipoDocId}
+              onChange={(e) => set({ tipoDocId: e.target.value })}
+              className="input"
+            >
+              {docsDisponibles.map((d) => (
+                <option key={d} value={d}>{TIPOS_DOCUMENTO_ID[d].label}</option>
+              ))}
+            </select>
+          </Fld>
+          <Fld label={`N° ${ev.tipoDocId || 'documento'}`} required>
+            <input
+              value={ev.numeroDocId || ''}
+              onChange={(e) => set({ numeroDocId: e.target.value })}
+              placeholder={ev.tipoDocId === 'NIT' ? '900.123.456-7' : '1.234.567.890'}
+              className="input font-mono"
+            />
+          </Fld>
+        </div>
+
+        <Fld label="Tipo de cliente" required className="mt-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {TIPOS_CLIENTE.map((tc) => {
+              const active = ev.tipoCliente === tc;
+              return (
+                <button
+                  key={tc}
+                  type="button"
+                  onClick={() => set({ tipoCliente: tc })}
+                  className={`text-xs py-2 px-2 rounded-lg border-2 font-semibold transition active:scale-[0.97] ${
+                    active
+                      ? 'border-brand bg-brand-softer text-brand'
+                      : 'border-border bg-surface text-fg-muted hover:border-border-strong'
+                  }`}
+                >
+                  {tc}
+                </button>
+              );
+            })}
           </div>
         </Fld>
-      </div>
+      </Section>
 
-      <Fld label="Forma de pago">
+      {/* Contacto */}
+      <Section title="Contacto" hint="Al menos teléfono o email">
+        <div className="grid md:grid-cols-3 gap-3">
+          <Fld label="Nombre" required>
+            <input value={ev.contactoNombre} onChange={(e) => set({ contactoNombre: e.target.value })} className="input" />
+          </Fld>
+          <Fld label="Teléfono">
+            <input value={ev.contactoTelefono} onChange={(e) => set({ contactoTelefono: e.target.value })} placeholder="+57 300 123 4567" className="input font-mono" />
+          </Fld>
+          <Fld label="Email">
+            <input type="email" value={ev.contactoEmail} onChange={(e) => set({ contactoEmail: e.target.value })} placeholder="correo@dominio.com" className="input" />
+          </Fld>
+        </div>
+      </Section>
+
+      {/* Datos del evento */}
+      <Section title="Datos del evento">
+        <div className="grid md:grid-cols-2 gap-3">
+          <Fld label="Fecha del evento" required>
+            <input type="date" value={ev.fechaEvento} onChange={(e) => set({ fechaEvento: e.target.value })} className="input" />
+          </Fld>
+          <Fld label="Tipo de evento" required>
+            <select value={ev.tipoEvento} onChange={(e) => set({ tipoEvento: e.target.value })} className="input">
+              {TIPO_EVENTO.map((x) => <option key={x}>{x}</option>)}
+            </select>
+          </Fld>
+        </div>
+      </Section>
+
+      {/* Pago */}
+      <Section title="Forma de pago">
         <select value={ev.formaPago} onChange={(e) => set({ formaPago: e.target.value })} className="input">
           {FORMAS_PAGO.map((f) => <option key={f}>{f}</option>)}
         </select>
-      </Fld>
+      </Section>
 
-      <Fld label="Comentarios">
-        <textarea value={ev.comentarios} onChange={(e) => set({ comentarios: e.target.value })} rows={3} className="input resize-none" />
-      </Fld>
+      {/* Notas */}
+      <Section title="Notas internas" hint="Solo visibles para el equipo">
+        <textarea
+          value={ev.comentarios}
+          onChange={(e) => set({ comentarios: e.target.value })}
+          rows={3}
+          className="input resize-none"
+          placeholder="Observaciones, contexto, detalles..."
+        />
+      </Section>
 
       {!bloqueado && (
         <div className="pt-5 border-t-2 border-border">
@@ -354,10 +460,14 @@ function TabComercial({ ev, set, bloqueado, puedeEnviar, errores, onFinalize }) 
   );
 }
 
-function ReadOnlyMoney({ label, value }) {
+function Section({ title, hint, children }) {
   return (
-    <Fld label={label}>
-      <div className="input bg-surface-sunken font-mono">{money(value)}</div>
-    </Fld>
+    <div>
+      <div className="flex items-baseline justify-between mb-2">
+        <h3 className="text-[11px] uppercase tracking-wider font-bold text-fg-muted">{title}</h3>
+        {hint && <span className="text-[10px] text-fg-subtle">{hint}</span>}
+      </div>
+      {children}
+    </div>
   );
 }

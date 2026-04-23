@@ -18,10 +18,19 @@ export const newEvent = (numero, usuario) => ({
   version: 1,
   comercial: usuario?.alias || '',
   fechaCreacion: hoy(),
+
+  tipoDocumento: 'COTIZACION',
+
   razonSocial: '',
+  tipoPersona: 'JURIDICA',
+  tipoDocId: 'NIT',
+  numeroDocId: '',
+  tipoCliente: '',
+
   contactoNombre: '',
   contactoTelefono: '',
   contactoEmail: '',
+
   fechaEvento: '',
   estado: 'EN ESPERA',
   tipoEvento: 'SOCIAL',

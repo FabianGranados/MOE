@@ -1,10 +1,20 @@
-export const validarEventoBorrador = (ev) => {
+export const validarDatosCliente = (ev) => {
   const errores = [];
   if (!ev.comercial) errores.push('Comercial');
-  if (!ev.razonSocial?.trim()) errores.push('Razón social');
-  if (!ev.contactoNombre?.trim()) errores.push('Contacto');
+  if (!ev.razonSocial?.trim()) errores.push(ev.tipoPersona === 'NATURAL' ? 'Nombre completo' : 'Razón social');
+  if (!ev.tipoPersona) errores.push('Tipo de persona');
+  if (!ev.tipoDocId) errores.push('Tipo de documento');
+  if (!ev.numeroDocId?.trim()) errores.push('Número de documento');
+  if (!ev.tipoCliente) errores.push('Tipo de cliente');
+  if (!ev.contactoNombre?.trim()) errores.push('Nombre de contacto');
   if (!ev.contactoTelefono?.trim() && !ev.contactoEmail?.trim()) errores.push('Teléfono o email');
-  if (!ev.fechaEvento) errores.push('Fecha evento');
+  if (!ev.fechaEvento) errores.push('Fecha del evento');
+  if (!ev.tipoEvento) errores.push('Tipo de evento');
+  return errores;
+};
+
+export const validarEventoBorrador = (ev) => {
+  const errores = validarDatosCliente(ev);
   if (!(ev.items || []).length) errores.push('Al menos un producto');
   return errores;
 };

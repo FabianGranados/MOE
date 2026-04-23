@@ -17,9 +17,32 @@ export const ESTADOS_META = {
 };
 export const ESTADOS = Object.keys(ESTADOS_META);
 
-export const TIPO_EVENTO = ['SOCIAL', 'EMPRESARIAL', 'MATRIMONIO', 'CORPORATIVO'];
+export const TIPO_EVENTO = ['SOCIAL', 'EMPRESARIAL', 'CORPORATIVO', 'MATRIMONIO', '15 AÑOS', 'CUMPLEAÑOS', 'BAUTIZO', 'FERIA'];
 export const FORMAS_PAGO = ['CONTADO', 'CREDICONTADO', 'CREDITO'];
 export const CATEGORIAS = ['Mobiliario', 'Mantelería', 'Iluminación', 'Decoración', 'Servicios', 'Otros'];
+
+export const TIPOS_DOCUMENTO_COTIZACION = [
+  { key: 'COTIZACION', label: 'Cotización', sub: 'Con IVA 19%', icon: '📄' },
+  { key: 'REMISION',   label: 'Remisión',   sub: 'Sin IVA',     icon: '📋' }
+];
+
+export const TIPOS_PERSONA = [
+  { key: 'JURIDICA',   label: 'Jurídica',          docs: ['NIT'] },
+  { key: 'NATURAL',    label: 'Natural',           docs: ['CC'] },
+  { key: 'EXTRANJERA', label: 'Extranjera',        docs: ['CE', 'PASAPORTE'] }
+];
+
+export const TIPOS_DOCUMENTO_ID = {
+  NIT:       { label: 'NIT',                      hint: 'Número de identificación tributaria' },
+  CC:        { label: 'Cédula de ciudadanía',     hint: null },
+  CE:        { label: 'Cédula de extranjería',    hint: null },
+  PASAPORTE: { label: 'Pasaporte',                hint: null }
+};
+
+export const TIPOS_CLIENTE = ['Hotel', 'Agencia de Eventos', 'Planeador', 'Cliente Final'];
+
+export const TEXTO_LEGAL_REMISION =
+  'Documento no válido como factura. El precio aquí expresado NO incluye IVA ni retenciones. En caso de requerir cuenta de cobro, los impuestos se cobrarán aparte.';
 
 export const FRANJAS = { manana: 'Mañana (9am - 12pm)', tarde: 'Tarde (1pm - 4pm)' };
 

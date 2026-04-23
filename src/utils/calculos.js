@@ -25,7 +25,11 @@ export const calcTransporte = (ev) =>
   (ev.items || []).filter(esNoComisionable).reduce((s, i) => s + calcItemTotal(i), 0);
 
 export const calcBaseIva = (ev) => calcProductos(ev) + calcTransporte(ev);
-export const calcIva = (ev) => Math.round(calcBaseIva(ev) * 0.19);
+
+export const aplicaIva = (ev) => (ev.tipoDocumento || 'COTIZACION') !== 'REMISION';
+
+export const calcIva = (ev) => (aplicaIva(ev) ? Math.round(calcBaseIva(ev) * 0.19) : 0);
+
 export const calcTotal = (ev) => calcBaseIva(ev) + calcIva(ev);
 export const calcPagado = (ev) =>
   (ev.pagos || []).reduce((s, p) => s + (Number(p.monto) || 0), 0);

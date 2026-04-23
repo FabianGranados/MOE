@@ -2,14 +2,19 @@ import { useState } from 'react';
 import { AlertCircle, CheckCircle2, Copy, Loader2, MessageCircle, Printer, Share2 } from 'lucide-react';
 import { Modal } from '../shared/Modal.jsx';
 import { money, fmtFecha, fmtFechaLarga } from '../../utils/format.js';
-import { calcIva, calcItemTotal, calcProductos, calcTotal, calcTransporte } from '../../utils/calculos.js';
+import { aplicaIva, calcIva, calcItemTotal, calcProductos, calcTotal, calcTransporte } from '../../utils/calculos.js';
+import { TEXTO_LEGAL_REMISION, TIPOS_DOCUMENTO_ID } from '../../constants.js';
+
+const esRemision = (ev) => (ev.tipoDocumento || 'COTIZACION') === 'REMISION';
+const tituloDoc  = (ev) => (esRemision(ev) ? 'REMISIÓN' : 'COTIZACIÓN');
 
 const generarTextoWhatsApp = (ev) => {
   const lineas = [];
-  lineas.push(`🎉 *COTIZACIÓN DECOLOUNGE*`);
+  lineas.push(`🎉 *${tituloDoc(ev)} DECOLOUNGE*`);
   lineas.push(`N° ${ev.numeroEvento}-${ev.version}`);
   lineas.push('');
   if (ev.razonSocial) lineas.push(`👤 *Cliente:* ${ev.razonSocial}`);
+  if (ev.numeroDocId) lineas.push(`🪪 *${ev.tipoDocId || 'Doc'}:* ${ev.numeroDocId}`);
   if (ev.contactoNombre) lineas.push(`📞 *Contacto:* ${ev.contactoNombre}`);
   if (ev.fechaEvento) lineas.push(`📅 *Fecha:* ${fmtFechaLarga(ev.fechaEvento)}`);
   lineas.push('');
@@ -19,8 +24,13 @@ const generarTextoWhatsApp = (ev) => {
     lineas.push(`   ${it.cantidad} × ${it.dias}d = *${money(calcItemTotal(it))}*`);
   });
   lineas.push('');
-  lineas.push(`💰 *TOTAL: ${money(calcTotal(ev))}* (IVA incluido)`);
+  const sufijoIva = aplicaIva(ev) ? ' (IVA incluido)' : ' (sin IVA)';
+  lineas.push(`💰 *TOTAL: ${money(calcTotal(ev))}*${sufijoIva}`);
   lineas.push(`💳 ${ev.formaPago}`);
+  if (esRemision(ev)) {
+    lineas.push('');
+    lineas.push(`ℹ️ _${TEXTO_LEGAL_REMISION}_`);
+  }
   lineas.push('');
   lineas.push(`_Por: ${ev.comercial}_ · _Decolounge_ ✨`);
   return lineas.join('\n');
@@ -58,7 +68,7 @@ async function descargarPDF(ev, setPdfError) {
 
     doc.setFontSize(8);
     doc.setTextColor(120, 113, 108);
-    doc.text('COTIZACIÓN', pageW - margin, y + 4, { align: 'right' });
+    doc.text(tituloDoc(ev), pageW - margin, y + 4, { align: 'right' });
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(28, 25, 23);
@@ -75,15 +85,18 @@ async function descargarPDF(ev, setPdfError) {
     y += 8;
 
     doc.setFillColor(250, 250, 249);
-    doc.roundedRect(margin, y, pageW - margin * 2, 32, 2, 2, 'F');
+    doc.roundedRect(margin, y, pageW - margin * 2, 40, 2, 2, 'F');
     const colW = (pageW - margin * 2) / 2;
+    const docLabel = TIPOS_DOCUMENTO_ID[ev.tipoDocId]?.label || ev.tipoDocId || '—';
     const campos = [
       ['CLIENTE', ev.razonSocial || '—'],
+      [docLabel.toUpperCase(), ev.numeroDocId || '—'],
+      ['TIPO CLIENTE', ev.tipoCliente || '—'],
       ['CONTACTO', ev.contactoNombre || '—'],
       ['TELÉFONO', ev.contactoTelefono || '—'],
       ['EMAIL', ev.contactoEmail || '—'],
       ['FECHA EVENTO', ev.fechaEvento ? fmtFechaLarga(ev.fechaEvento) : '—'],
-      ['TIPO', ev.tipoEvento || '—'],
+      ['TIPO EVENTO', ev.tipoEvento || '—'],
       ['COMERCIAL', ev.comercial || '—'],
       ['FORMA DE PAGO', ev.formaPago || '—']
     ];
@@ -102,7 +115,7 @@ async function descargarPDF(ev, setPdfError) {
       const val = doc.splitTextToSize(String(c[1]), colW - 8);
       doc.text(val[0] || '', x, yy + 3.5);
     });
-    y += 38;
+    y += 46;
 
     doc.setFillColor(28, 25, 23);
     doc.rect(margin, y, pageW - margin * 2, 8, 'F');
@@ -142,36 +155,65 @@ async function descargarPDF(ev, setPdfError) {
     });
     y += 5;
 
+    const llevaIva = aplicaIva(ev);
+    const llevaTransp = calcTransporte(ev) > 0;
+    const totalesAlto = 14 + (llevaTransp ? 6 : 0) + (llevaIva ? 6 : 0) + 8;
     doc.setFillColor(245, 245, 244);
-    doc.roundedRect(pageW - 90, y, 75, 32, 2, 2, 'F');
+    doc.roundedRect(pageW - 90, y, 75, totalesAlto, 2, 2, 'F');
+    let ty = y + 6;
+
     doc.setFontSize(9);
     doc.setTextColor(120, 113, 108);
-    doc.text('Productos:', pageW - 85, y + 6);
+    doc.text('Productos:', pageW - 85, ty);
     doc.setTextColor(28, 25, 23);
-    doc.text(money(calcProductos(ev)), pageW - margin - 3, y + 6, { align: 'right' });
+    doc.text(money(calcProductos(ev)), pageW - margin - 3, ty, { align: 'right' });
 
-    if (calcTransporte(ev) > 0) {
+    if (llevaTransp) {
+      ty += 6;
       doc.setTextColor(120, 113, 108);
-      doc.text('Transporte:', pageW - 85, y + 12);
+      doc.text('Transporte:', pageW - 85, ty);
       doc.setTextColor(28, 25, 23);
-      doc.text(money(calcTransporte(ev)), pageW - margin - 3, y + 12, { align: 'right' });
+      doc.text(money(calcTransporte(ev)), pageW - margin - 3, ty, { align: 'right' });
     }
 
-    doc.setTextColor(120, 113, 108);
-    doc.text('IVA 19%:', pageW - 85, y + 18);
-    doc.setTextColor(28, 25, 23);
-    doc.text(money(calcIva(ev)), pageW - margin - 3, y + 18, { align: 'right' });
+    if (llevaIva) {
+      ty += 6;
+      doc.setTextColor(120, 113, 108);
+      doc.text('IVA 19%:', pageW - 85, ty);
+      doc.setTextColor(28, 25, 23);
+      doc.text(money(calcIva(ev)), pageW - margin - 3, ty, { align: 'right' });
+    }
 
+    ty += 4;
     doc.setDrawColor(28, 25, 23);
     doc.setLineWidth(0.5);
-    doc.line(pageW - 85, y + 22, pageW - margin - 3, y + 22);
+    doc.line(pageW - 85, ty, pageW - margin - 3, ty);
 
+    ty += 6;
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(6, 95, 70);
-    doc.text('TOTAL:', pageW - 85, y + 28);
-    doc.text(money(calcTotal(ev)), pageW - margin - 3, y + 28, { align: 'right' });
-    y += 40;
+    doc.text('TOTAL:', pageW - 85, ty);
+    doc.text(money(calcTotal(ev)), pageW - margin - 3, ty, { align: 'right' });
+
+    y += totalesAlto + 6;
+
+    if (esRemision(ev)) {
+      doc.setFillColor(255, 251, 235);
+      doc.setDrawColor(245, 158, 11);
+      doc.setLineWidth(0.3);
+      const rHeight = 16;
+      doc.roundedRect(margin, y, pageW - margin * 2, rHeight, 2, 2, 'FD');
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(146, 64, 14);
+      doc.text('IMPORTANTE · DOCUMENTO NO VÁLIDO COMO FACTURA', margin + 3, y + 5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 50, 20);
+      const legalLines = doc.splitTextToSize(TEXTO_LEGAL_REMISION, pageW - margin * 2 - 6);
+      doc.text(legalLines.slice(0, 2), margin + 3, y + 9);
+      y += rHeight + 4;
+    }
 
     if (ev.comentarios) {
       doc.setFillColor(255, 251, 235);

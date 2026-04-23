@@ -8,7 +8,7 @@ import { ModalVender } from './ModalVender.jsx';
 import { ModalPerder } from './ModalPerder.jsx';
 import { ESTADOS } from '../../constants.js';
 import { money, fmtFecha } from '../../utils/format.js';
-import { calcTotal } from '../../utils/calculos.js';
+import { aplicaIva, calcTotal } from '../../utils/calculos.js';
 
 export function LeadsView({ events, currentUser, onOpen, onNew, onMarcarVendida, onMarcarPerdida, onNuevaVersion }) {
   const [search, setSearch] = useState('');
@@ -97,6 +97,11 @@ export function LeadsView({ events, currentUser, onOpen, onNew, onMarcarVendida,
                         {e.numeroEvento}-{e.version}
                       </span>
                       <EstadoBadge estado={e.estado} />
+                      {(e.tipoDocumento || 'COTIZACION') === 'REMISION' && (
+                        <span className="chip bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30">
+                          📋 Remisión
+                        </span>
+                      )}
                       {!e.finalizado && (
                         <span className="chip bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30">
                           BORRADOR
@@ -114,6 +119,7 @@ export function LeadsView({ events, currentUser, onOpen, onNew, onMarcarVendida,
                     </div>
                     <div className="text-[11px] text-fg-muted mt-0.5">
                       {e.fechaEvento ? fmtFecha(e.fechaEvento) : '—'} · <span className="font-mono font-semibold">{money(calcTotal(e))}</span>
+                      {!aplicaIva(e) && <span className="ml-1 text-fg-subtle">(sin IVA)</span>}
                     </div>
                   </div>
                   <div className="flex flex-col gap-1 flex-shrink-0">

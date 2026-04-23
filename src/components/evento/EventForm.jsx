@@ -42,10 +42,16 @@ export function EventForm({
 
   const bloqueado = ev.finalizado === true;
   const vendido = ev.estado === 'VENDIDO';
+  const perdido = ev.estado === 'PERDIDO';
+  // Cliente y Productos se bloquean al finalizar. Logística y Pagos siguen
+  // editables aunque esté vendida (el comercial necesita ajustar horarios,
+  // dirección, contactos, etc. después de la venta).
+  const datosClienteBloqueados = bloqueado;
+  const autoSaveActivo = !perdido;
   const set = (patch) => setEv((p) => ({ ...p, ...patch }));
 
   useEffect(() => {
-    if (bloqueado) return;
+    if (!autoSaveActivo) return;
     if (skipAutoSave.current) { skipAutoSave.current = false; return; }
     setSaveStatus('dirty');
     setDirty(true);
@@ -58,7 +64,7 @@ export function EventForm({
     }, 1500);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ev, bloqueado]);
+  }, [ev, autoSaveActivo]);
 
   useEffect(() => () => setDirty(false), [setDirty]);
 
@@ -310,7 +316,7 @@ export function EventForm({
               <TabComercial
                 ev={ev}
                 set={set}
-                bloqueado={bloqueado}
+                bloqueado={datosClienteBloqueados}
                 puedeEnviar={puedeEnviar}
                 errores={errores}
                 onFinalize={() => setShowConfirmFinalize(true)}
@@ -533,6 +539,50 @@ function TabComercial({ ev, set, bloqueado, puedeEnviar, errores, onFinalize, mo
         <select value={ev.formaPago} onChange={(e) => set({ formaPago: e.target.value })} className="input">
           {FORMAS_PAGO.map((f) => <option key={f}>{f}</option>)}
         </select>
+      </Section>
+
+      {/* Proveedor externo */}
+      <Section title="¿Lleva proveedor externo?" hint="Productos tercerizados">
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <button
+            type="button"
+            onClick={() => set({ llevaProveedorExterno: false })}
+            className={`py-2.5 rounded-lg text-xs font-semibold border-2 transition ${
+              !ev.llevaProveedorExterno
+                ? 'bg-fg text-surface border-fg'
+                : 'bg-surface text-fg-muted border-border hover:border-border-strong'
+            }`}
+          >
+            No · todo lo cubre Decolounge
+          </button>
+          <button
+            type="button"
+            onClick={() => set({ llevaProveedorExterno: true })}
+            className={`py-2.5 rounded-lg text-xs font-semibold border-2 transition ${
+              ev.llevaProveedorExterno
+                ? 'bg-amber-500 text-white border-amber-500'
+                : 'bg-surface text-fg-muted border-border hover:border-border-strong'
+            }`}
+          >
+            Sí · hay productos externos
+          </button>
+        </div>
+        {ev.llevaProveedorExterno && (
+          <div className="space-y-2">
+            <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg p-2.5 text-[11px] text-amber-900 dark:text-amber-300">
+              ℹ️ Cuando marques esta cotización como vendida, el <strong>CAC</strong> deberá dar visto bueno al proveedor externo antes del evento. Sube la cotización del proveedor desde <strong>Solicitud de OT</strong> en tu dashboard.
+            </div>
+            <Fld label="Notas sobre el proveedor / qué se terceriza">
+              <textarea
+                value={ev.proveedorExternoNotas || ''}
+                onChange={(e) => set({ proveedorExternoNotas: e.target.value })}
+                rows={2}
+                className="input resize-none"
+                placeholder="Ej: Carpa 6x6 → Eventos LM / sonido → DJ Pérez..."
+              />
+            </Fld>
+          </div>
+        )}
       </Section>
 
       {/* Notas */}

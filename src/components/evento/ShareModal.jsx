@@ -174,36 +174,67 @@ async function descargarPDF(ev, setPdfError) {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text('PRODUCTO', margin + 3, y + 5.5);
+    doc.text('PRODUCTO', margin + 3 + 20, y + 5.5);
     doc.text('CANT', pageW - 70, y + 5.5, { align: 'center' });
     doc.text('DÍAS', pageW - 50, y + 5.5, { align: 'center' });
     doc.text('SUBTOTAL', pageW - margin - 3, y + 5.5, { align: 'right' });
     y += 8;
 
+    const FILA_H = 22; // mm: 18mm foto + 2mm arriba/abajo
+    const FOTO_S = 18;
+
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(28, 25, 23);
     (ev.items || []).forEach((it, idx) => {
+      if (y + FILA_H > 275) { doc.addPage(); y = 20; }
+
       if (idx % 2 === 0) {
         doc.setFillColor(250, 250, 249);
-        doc.rect(margin, y, pageW - margin * 2, 10, 'F');
+        doc.rect(margin, y, pageW - margin * 2, FILA_H, 'F');
       }
-      const nombreLineas = doc.splitTextToSize(it.nombre, 95);
+
+      // Foto del item
+      const fotoX = margin + 2;
+      const fotoY = y + 2;
+      let fotoOk = false;
+      if (it.foto && typeof it.foto === 'string' && it.foto.startsWith('data:image')) {
+        try {
+          const fmt = it.foto.includes('png') ? 'PNG' : 'JPEG';
+          doc.addImage(it.foto, fmt, fotoX, fotoY, FOTO_S, FOTO_S, undefined, 'FAST');
+          fotoOk = true;
+        } catch (e) {
+          fotoOk = false;
+        }
+      }
+      if (!fotoOk) {
+        doc.setFillColor(230, 230, 228);
+        doc.roundedRect(fotoX, fotoY, FOTO_S, FOTO_S, 1, 1, 'F');
+        doc.setFontSize(6);
+        doc.setTextColor(140, 140, 135);
+        doc.text('SIN FOTO', fotoX + FOTO_S / 2, fotoY + FOTO_S / 2 + 1, { align: 'center' });
+        doc.setTextColor(28, 25, 23);
+      }
+
+      const textX = margin + 3 + FOTO_S + 3;
+      const nombreLineas = doc.splitTextToSize(it.nombre, 85);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
-      doc.text(nombreLineas[0], margin + 3, y + 4);
+      doc.text(nombreLineas.slice(0, 2), textX, y + 6);
       doc.setFontSize(7);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(120, 113, 108);
-      doc.text(`${it.codigo} · ${it.categoria}`, margin + 3, y + 8);
+      doc.text(`${it.codigo} · ${it.categoria}`, textX, y + FILA_H - 4);
       doc.setTextColor(28, 25, 23);
+
+      const yCenter = y + FILA_H / 2 + 1;
       doc.setFontSize(9);
-      doc.text(String(it.cantidad), pageW - 70, y + 6, { align: 'center' });
-      doc.text(String(it.dias), pageW - 50, y + 6, { align: 'center' });
+      doc.text(String(it.cantidad), pageW - 70, yCenter, { align: 'center' });
+      doc.text(String(it.dias), pageW - 50, yCenter, { align: 'center' });
       doc.setFont('helvetica', 'bold');
-      doc.text(money(calcItemTotal(it)), pageW - margin - 3, y + 6, { align: 'right' });
+      doc.text(money(calcItemTotal(it)), pageW - margin - 3, yCenter, { align: 'right' });
       doc.setFont('helvetica', 'normal');
-      y += 10;
-      if (y > 260) { doc.addPage(); y = 20; }
+
+      y += FILA_H;
     });
     y += 5;
 
@@ -340,6 +371,23 @@ export function ShareModal({ open, ev, onClose }) {
       subtitle={`${ev.numeroEvento}-${ev.version} · ${ev.razonSocial || 'Sin nombre'}`}
     >
       <div className="p-5 space-y-4">
+        {(() => {
+          const sinFoto = (ev.items || []).filter((it) => !it.foto || !String(it.foto).startsWith('data:image'));
+          if (sinFoto.length === 0) return null;
+          return (
+            <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg p-3 text-[11px] text-amber-900 dark:text-amber-300 flex items-start gap-2">
+              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+              <div>
+                <strong>{sinFoto.length} producto{sinFoto.length !== 1 ? 's' : ''} sin foto.</strong> El PDF mostrará un placeholder "SIN FOTO".
+                Para evitar confusiones con el cliente, sube la foto desde el <strong>Catálogo</strong> antes de compartir.
+                <div className="mt-1 text-[10px] text-amber-800 dark:text-amber-400/80">
+                  Faltan foto: {sinFoto.map((it) => it.nombre).slice(0, 3).join(', ')}{sinFoto.length > 3 && ` y ${sinFoto.length - 3} más`}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <button
             onClick={compartirWhatsApp}

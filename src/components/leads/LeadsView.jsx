@@ -107,6 +107,11 @@ export function LeadsView({ events, currentUser, onOpen, onNew, onMarcarVendida,
                           📋 Remisión
                         </span>
                       )}
+                      {e.llevaProveedorExterno && (
+                        <span className="chip bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-500/15 dark:text-orange-300 dark:border-orange-500/30">
+                          🔗 Proveedor ext.
+                        </span>
+                      )}
                       {!e.finalizado && (
                         <span className="chip bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30">
                           BORRADOR

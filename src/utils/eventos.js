@@ -35,6 +35,8 @@ export const newEvent = (numero, usuario) => ({
   horarioEvento: { tipo: 'abierto', franja: 'tarde', hora: '' },
   estado: 'EN ESPERA',
   tipoEvento: 'SOCIAL',
+  llevaProveedorExterno: false,
+  proveedorExternoNotas: '',
   formaPago: 'CONTADO',
   comentarios: '',
   items: [],

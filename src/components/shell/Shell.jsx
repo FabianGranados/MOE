@@ -101,7 +101,8 @@ export function Shell({
   };
 
   const marcarVendida = async (ev, datosOp) => {
-    const cambios = diffDatos(ev, { ...ev, ...datosOp }, currentUser);
+    const { pagoInicial, ...otros } = datosOp;
+    const cambios = diffDatos(ev, { ...ev, ...otros }, currentUser);
     const entradaVenta = {
       id: `h_${Date.now()}_v`,
       campo: '_estado',
@@ -112,14 +113,34 @@ export function Shell({
       usuarioNombre: currentUser.nombre,
       fecha: new Date().toISOString()
     };
+    const historialEventos = [entradaVenta, ...cambios];
+    let pagos = ev.pagos || [];
+    if (pagoInicial) {
+      pagos = [...pagos, pagoInicial];
+      historialEventos.push({
+        id: `h_${Date.now()}_pg`,
+        campo: '_pago',
+        label: 'Pago registrado',
+        anterior: '',
+        nuevo: `${pagoInicial.tipoPago} · ${pagoInicial.metodo} · $${pagoInicial.monto.toLocaleString('es-CO')}`,
+        usuarioId: currentUser.id,
+        usuarioNombre: currentUser.nombre,
+        fecha: new Date().toISOString()
+      });
+    }
     const evVendido = {
       ...ev,
-      ...datosOp,
+      ...otros,
+      pagos,
       estado: 'VENDIDO',
-      historial: [...(ev.historial || []), entradaVenta, ...cambios]
+      historial: [...(ev.historial || []), ...historialEventos]
     };
     await persistEvents(events.map((x) => (x.id === ev.id ? evVendido : x)));
-    toast.success('¡Venta registrada! 🎉', { description: `${ev.numeroEvento}-${ev.version} marcada como VENDIDA` });
+    toast.success('¡Venta registrada! 🎉', {
+      description: pagoInicial
+        ? `Pago de $${pagoInicial.monto.toLocaleString('es-CO')} queda pendiente de validación por contabilidad`
+        : `${ev.numeroEvento}-${ev.version} marcada como VENDIDA`
+    });
   };
 
   const marcarPerdida = async (ev, motivo) => {

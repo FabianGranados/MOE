@@ -117,7 +117,10 @@ export function Cotizador({ items, catalogo, addItem, updateItem, removeItem, ev
       <ModalManual
         open={showManual}
         onCancel={() => setShowManual(false)}
-        onSave={(p) => { addItem(p); setShowManual(false); }}
+        onSave={(p, opts) => {
+          addItem(p);
+          if (!opts?.keepOpen) setShowManual(false);
+        }}
       />
     </div>
   );

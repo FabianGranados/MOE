@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { AlertCircle, CheckCircle2, DollarSign, XCircle } from 'lucide-react';
 import { Modal } from '../shared/Modal.jsx';
 import { Fld } from '../shared/Fld.jsx';
-import { FRANJAS } from '../../constants.js';
-import { fmtFechaCorta, fmtFechaLarga } from '../../utils/format.js';
+import { BANCOS, FRANJAS, METODOS_PAGO } from '../../constants.js';
+import { fmtFechaCorta, fmtFechaLarga, hoy, money } from '../../utils/format.js';
+import { calcTotal } from '../../utils/calculos.js';
 
 function resumenHorario(h) {
   if (!h) return 'sin definir';
@@ -16,26 +17,89 @@ function resumenFechaHora(bloque) {
   return `${fmtFechaCorta(bloque.fecha)} · ${resumenHorario(bloque)}`;
 }
 
+const TIPOS_PAGO = [
+  { key: 'ANTICIPO_50',   label: 'Anticipo 50%', pct: 0.5 },
+  { key: 'ANTICIPO_PARC', label: 'Anticipo parcial',  pct: null },
+  { key: 'TOTAL_100',     label: 'Pago 100%', pct: 1.0 }
+];
+
 export function ModalVender({ open, ev, onCancel, onConfirm }) {
   const [notasBodega, setNotasBodega] = useState('');
   const [confirmaHorarios, setConfirmaHorarios] = useState(true);
 
+  // Pago
+  const [tipoPago, setTipoPago] = useState('ANTICIPO_50');
+  const [monto, setMonto] = useState(0);
+  const [fechaPago, setFechaPago] = useState(hoy());
+  const [metodo, setMetodo] = useState('Transferencia');
+  const [banco, setBanco] = useState('BANCOLOMBIA');
+  const [referencia, setReferencia] = useState('');
+  const [notasPago, setNotasPago] = useState('');
+  const [foto, setFoto] = useState('');
+  const [err, setErr] = useState('');
+  const fileRef = useRef(null);
+
+  const total = ev ? calcTotal(ev) : 0;
+
   useEffect(() => {
-    if (open) {
+    if (open && ev) {
       setNotasBodega('');
       setConfirmaHorarios(true);
+      setTipoPago('ANTICIPO_50');
+      setMonto(Math.round(total * 0.5));
+      setFechaPago(hoy());
+      setMetodo('Transferencia');
+      setBanco('BANCOLOMBIA');
+      setReferencia('');
+      setNotasPago('');
+      setFoto('');
+      setErr('');
     }
-  }, [open]);
+  }, [open, ev, total]);
+
+  // Al cambiar tipo de pago, sugerir el monto
+  useEffect(() => {
+    const tp = TIPOS_PAGO.find((x) => x.key === tipoPago);
+    if (tp && tp.pct != null) setMonto(Math.round(total * tp.pct));
+  }, [tipoPago, total]);
 
   if (!ev) return null;
 
+  const handleFile = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > 2 * 1024 * 1024) return setErr('Foto muy grande (máx 2MB)');
+    const r = new FileReader();
+    r.onload = (ev) => { setFoto(ev.target.result); setErr(''); };
+    r.readAsDataURL(f);
+  };
+
   const submit = () => {
+    if (!monto || monto <= 0) return setErr('El monto del pago es obligatorio');
+    if (monto > total) return setErr(`El monto no puede superar el total (${money(total)})`);
+    if (!foto) return setErr('Debes adjuntar el soporte del pago');
+
+    const pago = {
+      id: `pg_${Date.now()}`,
+      fecha: fechaPago,
+      monto: Number(monto),
+      metodo,
+      banco,
+      referencia,
+      notas: notasPago,
+      foto,
+      tipoPago,
+      validado: false,
+      registradoEn: new Date().toISOString()
+    };
+
     onConfirm({
       notasOperativas: notasBodega
         ? `${ev.notasOperativas ? ev.notasOperativas + '\n\n--- Al marcar vendida ---\n' : ''}${notasBodega}`
         : ev.notasOperativas || '',
       horariosConfirmados: confirmaHorarios,
-      fechaConfirmacionVenta: new Date().toISOString()
+      fechaConfirmacionVenta: new Date().toISOString(),
+      pagoInicial: pago
     });
   };
 
@@ -44,11 +108,13 @@ export function ModalVender({ open, ev, onCancel, onConfirm }) {
     (Array.isArray(ev.personasMontaje) && ev.personasMontaje.some(p => p?.nombre)) ||
     (Array.isArray(ev.personasDesmontaje) && ev.personasDesmontaje.some(p => p?.nombre));
 
+  const pctMonto = total > 0 ? Math.round((monto / total) * 100) : 0;
+
   return (
     <Modal
       open={open}
       onClose={onCancel}
-      size="lg"
+      size="xl"
       tone="success"
       title={
         <span className="flex items-center gap-2">
@@ -56,7 +122,7 @@ export function ModalVender({ open, ev, onCancel, onConfirm }) {
           Marcar {ev.numeroEvento}-{ev.version} como VENDIDA
         </span>
       }
-      subtitle={ev.fechaEvento ? `📅 Evento: ${fmtFechaLarga(ev.fechaEvento)}` : undefined}
+      subtitle={ev.fechaEvento ? `📅 Evento: ${fmtFechaLarga(ev.fechaEvento)} · Total: ${money(total)}` : undefined}
       footer={
         <>
           <button onClick={onCancel} className="btn-ghost">Cancelar</button>
@@ -64,11 +130,12 @@ export function ModalVender({ open, ev, onCancel, onConfirm }) {
         </>
       }
     >
-      <div className="p-5 space-y-4">
+      <div className="p-5 space-y-5">
         <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-xl p-3 text-[11px] text-emerald-900 dark:text-emerald-300">
-          🎉 El cliente aceptó. Revisa que los horarios siguen igual y agrega notas para bodega/logística si necesitas.
+          🎉 El cliente aceptó. Confirma los horarios, registra el pago recibido y agrega notas para bodega/logística.
         </div>
 
+        {/* Logística */}
         {tieneLogistica ? (
           <div className="card p-4">
             <div className="flex items-center justify-between mb-3">
@@ -107,7 +174,7 @@ export function ModalVender({ open, ev, onCancel, onConfirm }) {
               <div>
                 <div className="text-xs font-semibold text-fg">Confirmo que los horarios y logística siguen igual</div>
                 <div className="text-[10px] text-fg-muted mt-0.5">
-                  Si el cliente cambió algo, desmarca esto y luego edita los datos desde el detalle de la cotización.
+                  Si el cliente cambió algo, desmarca esto y edita desde el tab Logística del detalle.
                 </div>
               </div>
             </label>
@@ -115,10 +182,117 @@ export function ModalVender({ open, ev, onCancel, onConfirm }) {
         ) : (
           <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-xl p-3 text-[11px] text-amber-900 dark:text-amber-300 flex items-start gap-2">
             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-            <span>Esta cotización no tiene datos de logística. Recuerda completarlos desde el detalle después de marcar vendida para que bodega y logística puedan operar.</span>
+            <span>Esta cotización no tiene datos de logística. Recuerda completarlos desde el tab Logística del detalle después de marcar vendida.</span>
           </div>
         )}
 
+        {/* Pago */}
+        <div className="card p-4 border-violet-300 dark:border-violet-500/30 bg-gradient-to-br from-violet-50/50 to-transparent dark:from-violet-500/5">
+          <div className="flex items-center gap-2 mb-3">
+            <DollarSign className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+            <h4 className="text-xs font-bold uppercase tracking-wider text-fg">Registro de pago *</h4>
+          </div>
+          <p className="text-[11px] text-fg-muted mb-3">
+            Este pago queda <strong>pendiente de validación por contabilidad</strong>. Adjunta el soporte.
+          </p>
+
+          <Fld label="Tipo de pago" required>
+            <div className="grid grid-cols-3 gap-2">
+              {TIPOS_PAGO.map((tp) => {
+                const active = tipoPago === tp.key;
+                return (
+                  <button
+                    key={tp.key}
+                    type="button"
+                    onClick={() => setTipoPago(tp.key)}
+                    className={`py-2 px-2 rounded-lg text-[11px] font-semibold border-2 transition ${
+                      active
+                        ? 'bg-violet-600 text-white border-violet-600'
+                        : 'bg-surface text-fg-muted border-border hover:border-border-strong'
+                    }`}
+                  >
+                    {tp.label}
+                  </button>
+                );
+              })}
+            </div>
+          </Fld>
+
+          <div className="grid md:grid-cols-2 gap-3 mt-3">
+            <Fld label="Monto pagado" required hint={pctMonto > 0 ? `${pctMonto}% del total` : undefined}>
+              <input
+                type="number"
+                value={monto || ''}
+                onChange={(e) => setMonto(Number(e.target.value) || 0)}
+                className="input font-mono"
+              />
+            </Fld>
+            <Fld label="Fecha del pago" required>
+              <input
+                type="date"
+                value={fechaPago}
+                onChange={(e) => setFechaPago(e.target.value)}
+                className="input"
+              />
+            </Fld>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-3 mt-3">
+            <Fld label="Método">
+              <select value={metodo} onChange={(e) => setMetodo(e.target.value)} className="input">
+                {METODOS_PAGO.map((m) => <option key={m}>{m}</option>)}
+              </select>
+            </Fld>
+            <Fld label="Banco">
+              <select value={banco} onChange={(e) => setBanco(e.target.value)} className="input">
+                {BANCOS.map((b) => <option key={b}>{b}</option>)}
+              </select>
+            </Fld>
+          </div>
+
+          <Fld label="Referencia del pago" className="mt-3">
+            <input
+              value={referencia}
+              onChange={(e) => setReferencia(e.target.value)}
+              placeholder="Ej: transf 123456 / recibo 4567"
+              className="input font-mono"
+            />
+          </Fld>
+
+          <Fld label="Soporte de pago (foto)" required className="mt-3">
+            {foto ? (
+              <div className="relative aspect-video rounded-xl overflow-hidden bg-surface-sunken">
+                <img src={foto} alt="" className="w-full h-full object-contain" />
+                <button
+                  onClick={() => setFoto('')}
+                  className="absolute top-2 right-2 p-1.5 bg-surface rounded-full shadow text-fg-muted"
+                >
+                  <XCircle className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => fileRef.current?.click()}
+                className="w-full py-6 border-2 border-dashed border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/5 rounded-xl text-xs text-amber-800 dark:text-amber-300 font-medium transition hover:bg-amber-100/60"
+              >
+                📷 Subir comprobante / captura de pantalla
+              </button>
+            )}
+            <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
+          </Fld>
+
+          <Fld label="Notas del pago (opcional)" className="mt-3">
+            <textarea
+              value={notasPago}
+              onChange={(e) => setNotasPago(e.target.value)}
+              rows={2}
+              className="input resize-none"
+              placeholder="Algo que contabilidad deba saber..."
+            />
+          </Fld>
+        </div>
+
+        {/* Notas para bodega */}
         <Fld
           label="Notas para bodega y logística"
           hint="Opcional · las verá el equipo operativo"
@@ -126,11 +300,18 @@ export function ModalVender({ open, ev, onCancel, onConfirm }) {
           <textarea
             value={notasBodega}
             onChange={(e) => setNotasBodega(e.target.value)}
-            rows={4}
+            rows={3}
             className="input resize-none"
-            placeholder="Ej: el cliente solicita mantelería extra de repuesto, hay escaleras para el montaje, acceso limitado por la mañana..."
+            placeholder="Ej: el cliente solicita mantelería extra de repuesto, acceso limitado en la mañana..."
           />
         </Fld>
+
+        {err && (
+          <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-lg p-3 text-xs text-red-800 dark:text-red-300 flex items-start gap-2">
+            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+            <span>{err}</span>
+          </div>
+        )}
       </div>
     </Modal>
   );

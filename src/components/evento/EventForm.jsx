@@ -8,6 +8,7 @@ import { Confirm } from '../shared/Confirm.jsx';
 import { Fld } from '../shared/Fld.jsx';
 import { Stepper } from '../shared/Stepper.jsx';
 import { HorarioBloque, HorarioHora } from './HorarioBloque.jsx';
+import { PersonasLista } from './PersonasLista.jsx';
 import { useDirtyGuard } from '../../hooks/useDirtyGuard.jsx';
 import { Cotizador } from './Cotizador.jsx';
 import { TabEvento } from './TabEvento.jsx';
@@ -590,30 +591,42 @@ function TabLogistica({ ev, set }) {
   const montaje = ev.montaje || { fecha: '', tipo: 'abierto', franja: 'manana', hora: '' };
   const desmontaje = ev.desmontaje || { fecha: '', tipo: 'abierto', franja: 'tarde', hora: '' };
   const horarioEvento = ev.horarioEvento || { tipo: 'abierto', franja: 'tarde', hora: '' };
+  const personasMontaje = ev.personasMontaje || [{ nombre: '', celular: '' }, { nombre: '', celular: '' }];
+  const personasDesmontaje = ev.personasDesmontaje || [{ nombre: '', celular: '' }, { nombre: '', celular: '' }];
 
   return (
     <div className="space-y-5">
       <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-xl p-3 text-[11px] text-amber-900 dark:text-amber-300">
-        <strong>Importante:</strong> estos datos van en la cotización que enviarás al cliente.
-        Se incluyen en el PDF y definen los términos que el cliente acepta al aprobarla.
+        <strong>Importante:</strong> estos datos van en la cotización que se envía al cliente
+        y más adelante forman la <strong>Remisión de Entrega</strong> que usa logística.
       </div>
 
-      <Section title="Horario del evento" hint="Usa 24h">
+      <Section title="Horario del evento" hint="Formato 24h">
         <HorarioHora
           valor={horarioEvento}
           onChange={(h) => set({ horarioEvento: h })}
         />
       </Section>
 
-      <Section title="Dirección del evento">
-        <Fld label="Dirección exacta">
-          <input
-            value={ev.direccion || ''}
-            onChange={(e) => set({ direccion: e.target.value })}
-            placeholder="Cra 11 # 82-01, Bogotá"
-            className="input"
-          />
-        </Fld>
+      <Section title="Lugar del evento">
+        <div className="grid md:grid-cols-2 gap-3">
+          <Fld label="Dirección exacta">
+            <input
+              value={ev.direccion || ''}
+              onChange={(e) => set({ direccion: e.target.value })}
+              placeholder="Cra 11 # 82-01"
+              className="input"
+            />
+          </Fld>
+          <Fld label="Ciudad / municipio">
+            <input
+              value={ev.ciudad || ''}
+              onChange={(e) => set({ ciudad: e.target.value })}
+              placeholder="Bogotá"
+              className="input"
+            />
+          </Fld>
+        </div>
         <div className="mt-3">
           <Fld label="Link Google Maps">
             <div className="flex gap-2">
@@ -638,66 +651,50 @@ function TabLogistica({ ev, set }) {
         </div>
       </Section>
 
-      <HorarioBloque
-        titulo="🚚 Montaje / Entrega"
-        valor={montaje}
-        onChange={(m) => set({ montaje: m })}
-        fechaEvento={ev.fechaEvento}
-      />
-
-      <HorarioBloque
-        titulo="📤 Desmontaje / Recogida"
-        valor={desmontaje}
-        onChange={(m) => set({ desmontaje: m })}
-        fechaEvento={ev.fechaEvento}
-        esDesmontaje
-      />
-
-      <Section title="Contacto principal en sitio">
-        <div className="grid grid-cols-2 gap-3">
-          <Fld label="Nombre">
-            <input
-              value={ev.contactoPrincipal?.nombre || ''}
-              onChange={(e) => set({ contactoPrincipal: { ...(ev.contactoPrincipal || {}), nombre: e.target.value } })}
-              className="input"
-            />
-          </Fld>
-          <Fld label="Celular">
-            <input
-              value={ev.contactoPrincipal?.celular || ''}
-              onChange={(e) => set({ contactoPrincipal: { ...(ev.contactoPrincipal || {}), celular: e.target.value } })}
-              className="input font-mono"
-            />
-          </Fld>
+      <Section title="🚚 Montaje / Entrega">
+        <HorarioBloque
+          titulo="Fecha y hora"
+          valor={montaje}
+          onChange={(m) => set({ montaje: m })}
+          fechaEvento={ev.fechaEvento}
+        />
+        <div className="mt-3">
+          <PersonasLista
+            titulo="Personas que reciben"
+            hint="Mínimo 2. Es clave para que logística pueda validar en sitio."
+            minimo={2}
+            personas={personasMontaje}
+            onChange={(p) => set({ personasMontaje: p })}
+          />
         </div>
       </Section>
 
-      <Section title="Contacto backup (opcional)">
-        <div className="grid grid-cols-2 gap-3">
-          <Fld label="Nombre">
-            <input
-              value={ev.contactoBackup?.nombre || ''}
-              onChange={(e) => set({ contactoBackup: { ...(ev.contactoBackup || {}), nombre: e.target.value } })}
-              className="input"
-            />
-          </Fld>
-          <Fld label="Celular">
-            <input
-              value={ev.contactoBackup?.celular || ''}
-              onChange={(e) => set({ contactoBackup: { ...(ev.contactoBackup || {}), celular: e.target.value } })}
-              className="input font-mono"
-            />
-          </Fld>
+      <Section title="📤 Desmontaje / Recogida">
+        <HorarioBloque
+          titulo="Fecha y hora"
+          valor={desmontaje}
+          onChange={(m) => set({ desmontaje: m })}
+          fechaEvento={ev.fechaEvento}
+          esDesmontaje
+        />
+        <div className="mt-3">
+          <PersonasLista
+            titulo="Personas que entregan"
+            hint="Mínimo 2. Deben ser quienes firmarán la devolución del material."
+            minimo={2}
+            personas={personasDesmontaje}
+            onChange={(p) => set({ personasDesmontaje: p })}
+          />
         </div>
       </Section>
 
-      <Section title="Notas operativas">
+      <Section title="Notas operativas" hint="Acceso, parqueo, ascensor, etc.">
         <textarea
           value={ev.notasOperativas || ''}
           onChange={(e) => set({ notasOperativas: e.target.value })}
           rows={3}
           className="input resize-none"
-          placeholder="Acceso, parqueo, ascensor, precauciones..."
+          placeholder="Ej: acceso por portería sur, parqueo restringido después de 6pm, ascensor de servicio disponible..."
         />
       </Section>
     </div>

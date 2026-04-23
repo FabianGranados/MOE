@@ -39,7 +39,10 @@ export function ModalVender({ open, ev, onCancel, onConfirm }) {
     });
   };
 
-  const tieneLogistica = ev.direccion || ev.montaje?.fecha || ev.desmontaje?.fecha;
+  const tieneLogistica =
+    ev.direccion || ev.ciudad || ev.montaje?.fecha || ev.desmontaje?.fecha ||
+    (Array.isArray(ev.personasMontaje) && ev.personasMontaje.some(p => p?.nombre)) ||
+    (Array.isArray(ev.personasDesmontaje) && ev.personasDesmontaje.some(p => p?.nombre));
 
   return (
     <Modal
@@ -76,13 +79,20 @@ export function ModalVender({ open, ev, onCancel, onConfirm }) {
             </div>
             <div className="space-y-2 text-xs">
               <Linea label="Dirección" value={ev.direccion || '—'} />
+              {ev.ciudad && <Linea label="Ciudad" value={ev.ciudad} />}
               <Linea label="Horario del evento" value={resumenHorario(ev.horarioEvento)} />
               <Linea label="Montaje" value={resumenFechaHora(ev.montaje)} />
               <Linea label="Desmontaje" value={resumenFechaHora(ev.desmontaje)} />
-              {ev.contactoPrincipal?.nombre && (
+              {Array.isArray(ev.personasMontaje) && ev.personasMontaje.filter(p => p.nombre).length > 0 && (
                 <Linea
-                  label="Contacto principal"
-                  value={`${ev.contactoPrincipal.nombre} · ${ev.contactoPrincipal.celular || ''}`}
+                  label="Reciben"
+                  value={ev.personasMontaje.filter(p => p.nombre).map(p => `${p.nombre}${p.celular ? ` (${p.celular})` : ''}`).join(' · ')}
+                />
+              )}
+              {Array.isArray(ev.personasDesmontaje) && ev.personasDesmontaje.filter(p => p.nombre).length > 0 && (
+                <Linea
+                  label="Entregan"
+                  value={ev.personasDesmontaje.filter(p => p.nombre).map(p => `${p.nombre}${p.celular ? ` (${p.celular})` : ''}`).join(' · ')}
                 />
               )}
             </div>

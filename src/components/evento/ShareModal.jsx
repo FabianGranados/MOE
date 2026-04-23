@@ -27,7 +27,10 @@ const generarTextoWhatsApp = (ev) => {
   if (ev.horarioEvento && (ev.horarioEvento.hora || ev.horarioEvento.franja)) {
     lineas.push(`🕒 *Horario:* ${resumenHorario(ev.horarioEvento)}`);
   }
-  if (ev.direccion) lineas.push(`📍 *Dirección:* ${ev.direccion}`);
+  if (ev.direccion || ev.ciudad) {
+    const partes = [ev.direccion, ev.ciudad].filter(Boolean).join(', ');
+    lineas.push(`📍 *Dirección:* ${partes}`);
+  }
   if (ev.montaje?.fecha) lineas.push(`🚚 *Montaje:* ${resumenFechaHora(ev.montaje)}`);
   if (ev.desmontaje?.fecha) lineas.push(`📤 *Desmontaje:* ${resumenFechaHora(ev.desmontaje)}`);
   lineas.push('');
@@ -97,9 +100,6 @@ async function descargarPDF(ev, setPdfError) {
     doc.line(margin, y, pageW - margin, y);
     y += 8;
 
-    doc.setFillColor(250, 250, 249);
-    doc.roundedRect(margin, y, pageW - margin * 2, 54, 2, 2, 'F');
-    const colW = (pageW - margin * 2) / 2;
     const docLabel = TIPOS_DOCUMENTO_ID[ev.tipoDocId]?.label || ev.tipoDocId || '—';
     const campos = [
       ['CLIENTE', ev.razonSocial || '—'],
@@ -112,11 +112,17 @@ async function descargarPDF(ev, setPdfError) {
       ['HORARIO EVENTO', resumenHorario(ev.horarioEvento)],
       ['TIPO EVENTO', ev.tipoEvento || '—'],
       ['DIRECCIÓN', ev.direccion || '—'],
+      ['CIUDAD', ev.ciudad || '—'],
       ['MONTAJE', resumenFechaHora(ev.montaje)],
       ['DESMONTAJE', resumenFechaHora(ev.desmontaje)],
       ['COMERCIAL', ev.comercial || '—'],
       ['FORMA DE PAGO', ev.formaPago || '—']
     ];
+    const filasCampos = Math.ceil(campos.length / 2);
+    const altoCampos = 6 + filasCampos * 7 + 3;
+    doc.setFillColor(250, 250, 249);
+    doc.roundedRect(margin, y, pageW - margin * 2, altoCampos, 2, 2, 'F');
+    const colW = (pageW - margin * 2) / 2;
     campos.forEach((c, i) => {
       const col = i % 2;
       const row = Math.floor(i / 2);
@@ -132,7 +138,36 @@ async function descargarPDF(ev, setPdfError) {
       const val = doc.splitTextToSize(String(c[1]), colW - 8);
       doc.text(val[0] || '', x, yy + 3.5);
     });
-    y += 60;
+    y += altoCampos + 6;
+
+    // Bloque de personas (recibe / entrega)
+    const personasMontaje = (ev.personasMontaje || []).filter((p) => p?.nombre);
+    const personasDesmontaje = (ev.personasDesmontaje || []).filter((p) => p?.nombre);
+    if (personasMontaje.length > 0 || personasDesmontaje.length > 0) {
+      const altoPers = 8 + Math.max(personasMontaje.length, personasDesmontaje.length, 1) * 4 + 4;
+      doc.setFillColor(250, 250, 249);
+      doc.roundedRect(margin, y, pageW - margin * 2, altoPers, 2, 2, 'F');
+      const colPW = (pageW - margin * 2) / 2;
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(120, 113, 108);
+      doc.text('RECIBEN EN MONTAJE', margin + 4, y + 5);
+      doc.text('ENTREGAN EN DESMONTAJE', margin + 4 + colPW, y + 5);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(28, 25, 23);
+      personasMontaje.forEach((p, i) => {
+        const txt = `${p.nombre}${p.celular ? ` · ${p.celular}` : ''}`;
+        const line = doc.splitTextToSize(txt, colPW - 8);
+        doc.text(line[0] || '', margin + 4, y + 10 + i * 4);
+      });
+      personasDesmontaje.forEach((p, i) => {
+        const txt = `${p.nombre}${p.celular ? ` · ${p.celular}` : ''}`;
+        const line = doc.splitTextToSize(txt, colPW - 8);
+        doc.text(line[0] || '', margin + 4 + colPW, y + 10 + i * 4);
+      });
+      y += altoPers + 6;
+    }
 
     doc.setFillColor(28, 25, 23);
     doc.rect(margin, y, pageW - margin * 2, 8, 'F');

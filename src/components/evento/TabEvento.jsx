@@ -1,11 +1,14 @@
 import { CheckCircle2 } from 'lucide-react';
 import { Fld } from '../shared/Fld.jsx';
-import { HorarioBloque } from './HorarioBloque.jsx';
+import { HorarioBloque, HorarioHora } from './HorarioBloque.jsx';
 import { HistorialCambios } from './HistorialCambios.jsx';
+import { PersonasLista } from './PersonasLista.jsx';
 import { fmtFechaLarga } from '../../utils/format.js';
 
 const DEFAULT_MONTAJE = { fecha: '', tipo: 'abierto', franja: 'manana', hora: '' };
 const DEFAULT_DESMONTAJE = { fecha: '', tipo: 'abierto', franja: 'tarde', hora: '' };
+const DEFAULT_HORARIO = { tipo: 'abierto', franja: 'tarde', hora: '' };
+const DEFAULT_PERSONAS = [{ nombre: '', celular: '' }, { nombre: '', celular: '' }];
 
 export function TabEvento({ ev, set }) {
   return (
@@ -15,9 +18,22 @@ export function TabEvento({ ev, set }) {
         <span><strong>Evento VENDIDO</strong>{ev.fechaEvento && <> · <strong>{fmtFechaLarga(ev.fechaEvento)}</strong></>}</span>
       </div>
 
-      <Fld label="Dirección exacta">
-        <input value={ev.direccion || ''} onChange={(e) => set({ direccion: e.target.value })} className="input" />
-      </Fld>
+      <div>
+        <div className="text-[10px] font-bold uppercase tracking-wider text-fg-muted mb-2">Horario del evento</div>
+        <HorarioHora
+          valor={ev.horarioEvento || DEFAULT_HORARIO}
+          onChange={(h) => set({ horarioEvento: h })}
+        />
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-3">
+        <Fld label="Dirección exacta">
+          <input value={ev.direccion || ''} onChange={(e) => set({ direccion: e.target.value })} className="input" />
+        </Fld>
+        <Fld label="Ciudad / municipio">
+          <input value={ev.ciudad || ''} onChange={(e) => set({ ciudad: e.target.value })} className="input" />
+        </Fld>
+      </div>
 
       <Fld label="Link Google Maps">
         <div className="flex gap-2">
@@ -40,46 +56,40 @@ export function TabEvento({ ev, set }) {
         </div>
       </Fld>
 
-      <HorarioBloque titulo="🚚 Montaje / Entrega" valor={ev.montaje || DEFAULT_MONTAJE} onChange={(m) => set({ montaje: m })} fechaEvento={ev.fechaEvento} />
-      <HorarioBloque titulo="📤 Desmontaje / Recogida" valor={ev.desmontaje || DEFAULT_DESMONTAJE} onChange={(m) => set({ desmontaje: m })} fechaEvento={ev.fechaEvento} esDesmontaje />
-
-      <div className="pt-3 border-t border-border">
-        <div className="text-[10px] font-bold uppercase tracking-wider text-fg-muted mb-2">Contacto principal</div>
-        <div className="grid grid-cols-2 gap-3">
-          <Fld label="Nombre">
-            <input
-              value={ev.contactoPrincipal?.nombre || ''}
-              onChange={(e) => set({ contactoPrincipal: { ...(ev.contactoPrincipal || {}), nombre: e.target.value } })}
-              className="input"
-            />
-          </Fld>
-          <Fld label="Celular">
-            <input
-              value={ev.contactoPrincipal?.celular || ''}
-              onChange={(e) => set({ contactoPrincipal: { ...(ev.contactoPrincipal || {}), celular: e.target.value } })}
-              className="input font-mono"
-            />
-          </Fld>
+      <div>
+        <div className="text-[10px] font-bold uppercase tracking-wider text-fg-muted mb-2">🚚 Montaje / Entrega</div>
+        <HorarioBloque
+          titulo="Fecha y hora"
+          valor={ev.montaje || DEFAULT_MONTAJE}
+          onChange={(m) => set({ montaje: m })}
+          fechaEvento={ev.fechaEvento}
+        />
+        <div className="mt-3">
+          <PersonasLista
+            titulo="Personas que reciben"
+            minimo={2}
+            personas={ev.personasMontaje || DEFAULT_PERSONAS}
+            onChange={(p) => set({ personasMontaje: p })}
+          />
         </div>
       </div>
 
       <div>
-        <div className="text-[10px] font-bold uppercase tracking-wider text-fg-muted mb-2">Contacto backup</div>
-        <div className="grid grid-cols-2 gap-3">
-          <Fld label="Nombre">
-            <input
-              value={ev.contactoBackup?.nombre || ''}
-              onChange={(e) => set({ contactoBackup: { ...(ev.contactoBackup || {}), nombre: e.target.value } })}
-              className="input"
-            />
-          </Fld>
-          <Fld label="Celular">
-            <input
-              value={ev.contactoBackup?.celular || ''}
-              onChange={(e) => set({ contactoBackup: { ...(ev.contactoBackup || {}), celular: e.target.value } })}
-              className="input font-mono"
-            />
-          </Fld>
+        <div className="text-[10px] font-bold uppercase tracking-wider text-fg-muted mb-2">📤 Desmontaje / Recogida</div>
+        <HorarioBloque
+          titulo="Fecha y hora"
+          valor={ev.desmontaje || DEFAULT_DESMONTAJE}
+          onChange={(m) => set({ desmontaje: m })}
+          fechaEvento={ev.fechaEvento}
+          esDesmontaje
+        />
+        <div className="mt-3">
+          <PersonasLista
+            titulo="Personas que entregan"
+            minimo={2}
+            personas={ev.personasDesmontaje || DEFAULT_PERSONAS}
+            onChange={(p) => set({ personasDesmontaje: p })}
+          />
         </div>
       </div>
 

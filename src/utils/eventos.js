@@ -41,9 +41,18 @@ export const newEvent = (numero, usuario) => ({
   finalizado: false,
   createdBy: usuario?.id,
   direccion: '',
+  ciudad: '',
   mapsUrl: '',
   montaje: { fecha: '', tipo: 'abierto', franja: 'manana', hora: '' },
   desmontaje: { fecha: '', tipo: 'abierto', franja: 'tarde', hora: '' },
+  personasMontaje: [
+    { nombre: '', celular: '' },
+    { nombre: '', celular: '' }
+  ],
+  personasDesmontaje: [
+    { nombre: '', celular: '' },
+    { nombre: '', celular: '' }
+  ],
   contactoPrincipal: { nombre: '', celular: '' },
   contactoBackup: { nombre: '', celular: '' },
   notasOperativas: '',

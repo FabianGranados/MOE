@@ -16,7 +16,7 @@ export const newEvent = (numero, usuario) => ({
   id: `evt_${Date.now()}`,
   numeroEvento: numero,
   version: 1,
-  comercial: usuario?.alias || '',
+  comercial: usuario?.alias || (usuario?.nombre || '').split(' ')[0].toUpperCase() || '',
   fechaCreacion: hoy(),
 
   tipoDocumento: 'COTIZACION',

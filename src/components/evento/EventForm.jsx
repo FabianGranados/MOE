@@ -425,18 +425,17 @@ function TabComercial({ ev, set, bloqueado, puedeEnviar, errores, onFinalize, mo
       </Section>
 
       {/* Quién cotiza */}
-      <Section title="Quién cotiza">
+      <Section title="Quién cotiza" hint="Asignado automáticamente">
         <div className="grid md:grid-cols-2 gap-4">
-          <Fld label="Comercial" required>
+          <Fld label="Comercial">
             <input
               value={ev.comercial}
-              onChange={(e) => set({ comercial: e.target.value.toUpperCase() })}
-              placeholder="AMMY"
-              className="input font-mono"
+              disabled
+              className="input font-mono bg-surface-sunken text-fg-muted"
             />
           </Fld>
           <Fld label="N° Cotización">
-            <input value={ev.numeroEvento} disabled className="input font-mono text-fg-muted" />
+            <input value={ev.numeroEvento} disabled className="input font-mono bg-surface-sunken text-fg-muted" />
           </Fld>
         </div>
       </Section>
@@ -488,25 +487,14 @@ function TabComercial({ ev, set, bloqueado, puedeEnviar, errores, onFinalize, mo
         </div>
 
         <Fld label="Tipo de cliente" required className="mt-3">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {TIPOS_CLIENTE.map((tc) => {
-              const active = ev.tipoCliente === tc;
-              return (
-                <button
-                  key={tc}
-                  type="button"
-                  onClick={() => set({ tipoCliente: tc })}
-                  className={`text-xs py-2 px-2 rounded-lg border-2 font-semibold transition active:scale-[0.97] ${
-                    active
-                      ? 'border-brand bg-brand-softer text-brand'
-                      : 'border-border bg-surface text-fg-muted hover:border-border-strong'
-                  }`}
-                >
-                  {tc}
-                </button>
-              );
-            })}
-          </div>
+          <select
+            value={ev.tipoCliente || ''}
+            onChange={(e) => set({ tipoCliente: e.target.value })}
+            className="input"
+          >
+            <option value="">Selecciona...</option>
+            {TIPOS_CLIENTE.map((tc) => <option key={tc} value={tc}>{tc}</option>)}
+          </select>
         </Fld>
       </Section>
 

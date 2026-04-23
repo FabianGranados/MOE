@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --surface: 255 255 255;
+    --surface-elev: 255 255 255;
+    --surface-sunken: 250 250 249;
+
+    --border: 231 229 228;
+    --border-strong: 214 211 209;
+
+    --fg: 28 25 23;
+    --fg-muted: 87 83 78;
+    --fg-subtle: 168 162 158;
+
+    --brand: 225 29 72;
+    --brand-hover: 190 18 60;
+    --brand-soft: 255 228 230;
+    --brand-softer: 255 241 242;
+
+    --success: 5 150 105;
+    --warning: 217 119 6;
+    --danger: 220 38 38;
+    --info: 79 70 229;
+  }
+
+  .dark {
+    --surface: 20 17 16;
+    --surface-elev: 28 25 23;
+    --surface-sunken: 12 10 9;
+
+    --border: 41 37 36;
+    --border-strong: 68 64 60;
+
+    --fg: 245 245 244;
+    --fg-muted: 168 162 158;
+    --fg-subtle: 120 113 108;
+
+    --brand: 244 63 94;
+    --brand-hover: 225 29 72;
+    --brand-soft: 63 18 32;
+    --brand-softer: 42 12 22;
+
+    --success: 16 185 129;
+    --warning: 245 158 11;
+    --danger: 239 68 68;
+    --info: 99 102 241;
+  }
+
+  * { border-color: rgb(var(--border)); }
+  html { -webkit-tap-highlight-color: transparent; }
+  body {
+    @apply bg-surface-sunken text-fg font-sans antialiased;
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
+    overscroll-behavior-y: none;
+  }
+
+  input, textarea, select, button { font-family: inherit; }
+  input[type='date']::-webkit-calendar-picker-indicator { cursor: pointer; }
+  input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type='number'] { -moz-appearance: textfield; }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgb(var(--border-strong)); border-radius: 10px; border: 2px solid rgb(var(--surface-sunken)); }
+  ::-webkit-scrollbar-thumb:hover { background: rgb(var(--fg-subtle)); }
+}
+
+@layer components {
+  .input {
+    @apply w-full px-3 py-2 text-[13px] bg-surface border border-border rounded-lg text-fg
+           placeholder:text-fg-subtle transition
+           focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/10
+           disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+  textarea.input { @apply leading-relaxed; }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-full font-semibold text-xs
+           transition active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed
+           disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-4;
+  }
+  .btn-primary { @apply btn bg-brand text-white px-4 py-2 hover:bg-brand-hover focus-visible:ring-brand/30 shadow-sm shadow-brand/25; }
+  .btn-dark    { @apply btn bg-fg text-surface px-4 py-2 hover:opacity-90 focus-visible:ring-fg/20; }
+  .btn-ghost   { @apply btn border border-border text-fg-muted px-3 py-2 hover:border-border-strong hover:text-fg hover:bg-surface; }
+  .btn-danger  { @apply btn bg-red-600 text-white px-4 py-2 hover:bg-red-700 focus-visible:ring-red-600/30; }
+  .btn-success { @apply btn bg-emerald-600 text-white px-4 py-2 hover:bg-emerald-700 focus-visible:ring-emerald-600/30; }
+  .btn-icon    { @apply inline-flex items-center justify-center w-9 h-9 rounded-full hover:bg-surface-sunken text-fg-muted transition active:scale-90; }
+
+  .card { @apply bg-surface border border-border rounded-2xl shadow-soft; }
+  .card-hover { @apply card transition hover:shadow-elev hover:border-border-strong; }
+
+  .chip { @apply inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold; }
+
+  .kbd {
+    @apply inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded
+           border border-border-strong bg-surface-sunken text-fg-muted
+           font-mono text-[10px] font-semibold;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden bg-surface-sunken rounded-lg;
+  }
+  .skeleton::after {
+    content: '';
+    @apply absolute inset-0;
+    background: linear-gradient(90deg, transparent, rgb(var(--border) / 0.5), transparent);
+    animation: shimmer 1.4s infinite;
+  }
+  @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+  .tap-fade { @apply transition active:opacity-60; }
+
+  .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 0.75rem); }
+  .safe-top    { padding-top: max(env(safe-area-inset-top), 0.5rem); }
+}
+
+@layer utilities {
+  .scrollbar-none { scrollbar-width: none; }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+  .text-balance { text-wrap: balance; }
+  .no-drag { -webkit-user-drag: none; user-select: none; }
+}

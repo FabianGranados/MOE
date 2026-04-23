@@ -1,9 +1,16 @@
 import { useState } from 'react';
 import { AlertCircle, CheckCircle2, Copy, Loader2, MessageCircle, Printer, Share2 } from 'lucide-react';
 import { Modal } from '../shared/Modal.jsx';
-import { money, fmtFecha, fmtFechaLarga } from '../../utils/format.js';
+import { money, fmtFecha, fmtFechaCorta, fmtFechaLarga } from '../../utils/format.js';
 import { aplicaIva, calcIva, calcItemTotal, calcProductos, calcTotal, calcTransporte } from '../../utils/calculos.js';
-import { TEXTO_LEGAL_REMISION, TIPOS_DOCUMENTO_ID } from '../../constants.js';
+import { FRANJAS, TEXTO_LEGAL_REMISION, TIPOS_DOCUMENTO_ID } from '../../constants.js';
+
+const resumenHorario = (h) => {
+  if (!h) return '—';
+  if (h.tipo === 'cerrado') return h.hora ? `${h.hora} h (cerrado)` : 'cerrado';
+  return `abierto · ${FRANJAS[h.franja] || ''}`;
+};
+const resumenFechaHora = (b) => (b?.fecha ? `${fmtFechaCorta(b.fecha)} · ${resumenHorario(b)}` : '—');
 
 const esRemision = (ev) => (ev.tipoDocumento || 'COTIZACION') === 'REMISION';
 const tituloDoc  = (ev) => (esRemision(ev) ? 'REMISIÓN' : 'COTIZACIÓN');
@@ -17,6 +24,12 @@ const generarTextoWhatsApp = (ev) => {
   if (ev.numeroDocId) lineas.push(`🪪 *${ev.tipoDocId || 'Doc'}:* ${ev.numeroDocId}`);
   if (ev.contactoNombre) lineas.push(`📞 *Contacto:* ${ev.contactoNombre}`);
   if (ev.fechaEvento) lineas.push(`📅 *Fecha:* ${fmtFechaLarga(ev.fechaEvento)}`);
+  if (ev.horarioEvento && (ev.horarioEvento.hora || ev.horarioEvento.franja)) {
+    lineas.push(`🕒 *Horario:* ${resumenHorario(ev.horarioEvento)}`);
+  }
+  if (ev.direccion) lineas.push(`📍 *Dirección:* ${ev.direccion}`);
+  if (ev.montaje?.fecha) lineas.push(`🚚 *Montaje:* ${resumenFechaHora(ev.montaje)}`);
+  if (ev.desmontaje?.fecha) lineas.push(`📤 *Desmontaje:* ${resumenFechaHora(ev.desmontaje)}`);
   lineas.push('');
   lineas.push(`📦 *PRODUCTOS*`);
   (ev.items || []).forEach((it) => {
@@ -85,7 +98,7 @@ async function descargarPDF(ev, setPdfError) {
     y += 8;
 
     doc.setFillColor(250, 250, 249);
-    doc.roundedRect(margin, y, pageW - margin * 2, 40, 2, 2, 'F');
+    doc.roundedRect(margin, y, pageW - margin * 2, 54, 2, 2, 'F');
     const colW = (pageW - margin * 2) / 2;
     const docLabel = TIPOS_DOCUMENTO_ID[ev.tipoDocId]?.label || ev.tipoDocId || '—';
     const campos = [
@@ -96,7 +109,11 @@ async function descargarPDF(ev, setPdfError) {
       ['TELÉFONO', ev.contactoTelefono || '—'],
       ['EMAIL', ev.contactoEmail || '—'],
       ['FECHA EVENTO', ev.fechaEvento ? fmtFechaLarga(ev.fechaEvento) : '—'],
+      ['HORARIO EVENTO', resumenHorario(ev.horarioEvento)],
       ['TIPO EVENTO', ev.tipoEvento || '—'],
+      ['DIRECCIÓN', ev.direccion || '—'],
+      ['MONTAJE', resumenFechaHora(ev.montaje)],
+      ['DESMONTAJE', resumenFechaHora(ev.desmontaje)],
       ['COMERCIAL', ev.comercial || '—'],
       ['FORMA DE PAGO', ev.formaPago || '—']
     ];
@@ -115,7 +132,7 @@ async function descargarPDF(ev, setPdfError) {
       const val = doc.splitTextToSize(String(c[1]), colW - 8);
       doc.text(val[0] || '', x, yy + 3.5);
     });
-    y += 46;
+    y += 60;
 
     doc.setFillColor(28, 25, 23);
     doc.rect(margin, y, pageW - margin * 2, 8, 'F');

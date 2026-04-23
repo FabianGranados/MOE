@@ -133,9 +133,9 @@ export function HoyView({ events, onOpen, onNew, onMarcarVendida, onMarcarPerdid
           </div>
 
           <div className="space-y-6">
-            <Seccion title="Acción obligatoria" subtitle="Eventos ya pasaron" tone="red" items={clasif[1]} onOpen={onOpen} />
-            <Seccion title="Urgente" subtitle="En ≤7 días sin confirmar" tone="orange" items={clasif[2]} onOpen={onOpen} />
-            <Seccion title="Atención" subtitle="En 15 días · sin actividad" tone="amber" items={clasif[3]} onOpen={onOpen} />
+            <Seccion title="Acción obligatoria" subtitle="Eventos ya pasaron" tone="red" items={clasif[1]} onOpen={onOpen} onMarcarVendida={(ev) => setAccion({ tipo: 'vender', ev })} onMarcarPerdida={(ev) => setAccion({ tipo: 'perder', ev })} />
+            <Seccion title="Urgente" subtitle="En ≤7 días sin confirmar" tone="orange" items={clasif[2]} onOpen={onOpen} onMarcarVendida={(ev) => setAccion({ tipo: 'vender', ev })} onMarcarPerdida={(ev) => setAccion({ tipo: 'perder', ev })} />
+            <Seccion title="Atención" subtitle="En 15 días · sin actividad" tone="amber" items={clasif[3]} onOpen={onOpen} onMarcarVendida={(ev) => setAccion({ tipo: 'vender', ev })} onMarcarPerdida={(ev) => setAccion({ tipo: 'perder', ev })} />
             <Seccion title="Próximos eventos" subtitle="Vendidos en 15 días" tone="emerald" items={clasif[5]} onOpen={onOpen} />
 
             {totalAlertas === 0 && (

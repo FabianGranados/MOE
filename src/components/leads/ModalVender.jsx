@@ -1,51 +1,51 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Modal } from '../shared/Modal.jsx';
 import { Fld } from '../shared/Fld.jsx';
-import { HorarioBloque } from '../evento/HorarioBloque.jsx';
-import { validarDatosOperativos } from '../../utils/validaciones.js';
-import { fmtFechaLarga } from '../../utils/format.js';
+import { FRANJAS } from '../../constants.js';
+import { fmtFechaCorta, fmtFechaLarga } from '../../utils/format.js';
+
+function resumenHorario(h) {
+  if (!h) return 'sin definir';
+  if (h.tipo === 'cerrado') return h.hora ? `${h.hora} h (cerrado)` : 'cerrado · sin hora';
+  return `abierto · ${FRANJAS[h.franja] || ''}`;
+}
+
+function resumenFechaHora(bloque) {
+  if (!bloque?.fecha) return 'sin definir';
+  return `${fmtFechaCorta(bloque.fecha)} · ${resumenHorario(bloque)}`;
+}
 
 export function ModalVender({ open, ev, onCancel, onConfirm }) {
-  const [data, setData] = useState({
-    direccion: '',
-    mapsUrl: '',
-    montaje: { fecha: '', tipo: 'abierto', franja: 'manana', hora: '' },
-    desmontaje: { fecha: '', tipo: 'abierto', franja: 'tarde', hora: '' },
-    contactoPrincipal: { nombre: '', celular: '' },
-    contactoBackup: { nombre: '', celular: '' },
-    notasOperativas: ''
-  });
-  const [err, setErr] = useState('');
+  const [notasBodega, setNotasBodega] = useState('');
+  const [confirmaHorarios, setConfirmaHorarios] = useState(true);
 
   useEffect(() => {
-    if (open && ev) {
-      setData({
-        direccion: '',
-        mapsUrl: '',
-        montaje: { fecha: ev.fechaEvento || '', tipo: 'abierto', franja: 'manana', hora: '' },
-        desmontaje: { fecha: ev.fechaEvento || '', tipo: 'abierto', franja: 'tarde', hora: '' },
-        contactoPrincipal: { nombre: '', celular: '' },
-        contactoBackup: { nombre: '', celular: '' },
-        notasOperativas: ''
-      });
-      setErr('');
+    if (open) {
+      setNotasBodega('');
+      setConfirmaHorarios(true);
     }
-  }, [open, ev]);
+  }, [open]);
 
   if (!ev) return null;
 
   const submit = () => {
-    const errores = validarDatosOperativos(data);
-    if (errores.length) return setErr(errores.join(', '));
-    onConfirm(data);
+    onConfirm({
+      notasOperativas: notasBodega
+        ? `${ev.notasOperativas ? ev.notasOperativas + '\n\n--- Al marcar vendida ---\n' : ''}${notasBodega}`
+        : ev.notasOperativas || '',
+      horariosConfirmados: confirmaHorarios,
+      fechaConfirmacionVenta: new Date().toISOString()
+    });
   };
+
+  const tieneLogistica = ev.direccion || ev.montaje?.fecha || ev.desmontaje?.fecha;
 
   return (
     <Modal
       open={open}
       onClose={onCancel}
-      size="xl"
+      size="lg"
       tone="success"
       title={
         <span className="flex items-center gap-2">
@@ -62,73 +62,75 @@ export function ModalVender({ open, ev, onCancel, onConfirm }) {
       }
     >
       <div className="p-5 space-y-4">
-        <Fld label="Dirección exacta" required>
-          <input
-            value={data.direccion}
-            onChange={(e) => setData({ ...data, direccion: e.target.value })}
-            placeholder="Cra 11 # 82-01, Bogotá"
-            className="input"
-          />
-        </Fld>
-        <Fld label="Link Google Maps">
-          <input value={data.mapsUrl} onChange={(e) => setData({ ...data, mapsUrl: e.target.value })} className="input" />
-        </Fld>
-
-        <HorarioBloque titulo="🚚 Montaje / Entrega" valor={data.montaje} onChange={(m) => setData({ ...data, montaje: m })} fechaEvento={ev.fechaEvento} />
-        <HorarioBloque titulo="📤 Desmontaje / Recogida" valor={data.desmontaje} onChange={(m) => setData({ ...data, desmontaje: m })} fechaEvento={ev.fechaEvento} esDesmontaje />
-
-        <div className="pt-3 border-t border-border">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-fg-muted mb-2">Contacto principal *</div>
-          <div className="grid grid-cols-2 gap-2">
-            <Fld label="Nombre">
-              <input
-                value={data.contactoPrincipal.nombre}
-                onChange={(e) => setData({ ...data, contactoPrincipal: { ...data.contactoPrincipal, nombre: e.target.value } })}
-                className="input"
-              />
-            </Fld>
-            <Fld label="Celular">
-              <input
-                value={data.contactoPrincipal.celular}
-                onChange={(e) => setData({ ...data, contactoPrincipal: { ...data.contactoPrincipal, celular: e.target.value } })}
-                className="input font-mono"
-              />
-            </Fld>
-          </div>
+        <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-xl p-3 text-[11px] text-emerald-900 dark:text-emerald-300">
+          🎉 El cliente aceptó. Revisa que los horarios siguen igual y agrega notas para bodega/logística si necesitas.
         </div>
-        <div>
-          <div className="text-[10px] font-bold uppercase tracking-wider text-fg-muted mb-2">Contacto backup</div>
-          <div className="grid grid-cols-2 gap-2">
-            <Fld label="Nombre">
+
+        {tieneLogistica ? (
+          <div className="card p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-fg-muted">Resumen de logística</h4>
+              <span className="chip bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30">
+                Según cotización
+              </span>
+            </div>
+            <div className="space-y-2 text-xs">
+              <Linea label="Dirección" value={ev.direccion || '—'} />
+              <Linea label="Horario del evento" value={resumenHorario(ev.horarioEvento)} />
+              <Linea label="Montaje" value={resumenFechaHora(ev.montaje)} />
+              <Linea label="Desmontaje" value={resumenFechaHora(ev.desmontaje)} />
+              {ev.contactoPrincipal?.nombre && (
+                <Linea
+                  label="Contacto principal"
+                  value={`${ev.contactoPrincipal.nombre} · ${ev.contactoPrincipal.celular || ''}`}
+                />
+              )}
+            </div>
+
+            <label className="flex items-start gap-2.5 mt-4 pt-3 border-t border-border cursor-pointer">
               <input
-                value={data.contactoBackup.nombre}
-                onChange={(e) => setData({ ...data, contactoBackup: { ...data.contactoBackup, nombre: e.target.value } })}
-                className="input"
+                type="checkbox"
+                checked={confirmaHorarios}
+                onChange={(e) => setConfirmaHorarios(e.target.checked)}
+                className="mt-0.5"
               />
-            </Fld>
-            <Fld label="Celular">
-              <input
-                value={data.contactoBackup.celular}
-                onChange={(e) => setData({ ...data, contactoBackup: { ...data.contactoBackup, celular: e.target.value } })}
-                className="input font-mono"
-              />
-            </Fld>
+              <div>
+                <div className="text-xs font-semibold text-fg">Confirmo que los horarios y logística siguen igual</div>
+                <div className="text-[10px] text-fg-muted mt-0.5">
+                  Si el cliente cambió algo, desmarca esto y luego edita los datos desde el detalle de la cotización.
+                </div>
+              </div>
+            </label>
           </div>
-        </div>
-        <Fld label="Notas operativas">
-          <textarea
-            value={data.notasOperativas}
-            onChange={(e) => setData({ ...data, notasOperativas: e.target.value })}
-            rows={2}
-            className="input resize-none"
-          />
-        </Fld>
-        {err && (
-          <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-lg p-2 text-xs text-red-800 dark:text-red-300">
-            <strong>Faltan:</strong> {err}
+        ) : (
+          <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-xl p-3 text-[11px] text-amber-900 dark:text-amber-300 flex items-start gap-2">
+            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+            <span>Esta cotización no tiene datos de logística. Recuerda completarlos desde el detalle después de marcar vendida para que bodega y logística puedan operar.</span>
           </div>
         )}
+
+        <Fld
+          label="Notas para bodega y logística"
+          hint="Opcional · las verá el equipo operativo"
+        >
+          <textarea
+            value={notasBodega}
+            onChange={(e) => setNotasBodega(e.target.value)}
+            rows={4}
+            className="input resize-none"
+            placeholder="Ej: el cliente solicita mantelería extra de repuesto, hay escaleras para el montaje, acceso limitado por la mañana..."
+          />
+        </Fld>
       </div>
     </Modal>
+  );
+}
+
+function Linea({ label, value }) {
+  return (
+    <div className="flex items-start gap-3">
+      <span className="text-[10px] uppercase tracking-wider font-bold text-fg-muted w-32 flex-shrink-0 pt-0.5">{label}</span>
+      <span className="text-xs text-fg flex-1 min-w-0">{value}</span>
+    </div>
   );
 }

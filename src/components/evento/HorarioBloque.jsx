@@ -3,6 +3,67 @@ import { Fld } from '../shared/Fld.jsx';
 import { FRANJAS } from '../../constants.js';
 import { addDias, diffDias, fmtFechaCorta } from '../../utils/format.js';
 
+export function HorarioHora({ valor, onChange }) {
+  const esCerrado = valor.tipo === 'cerrado';
+  return (
+    <div className="border border-border rounded-xl p-4 bg-surface-sunken/50">
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <button
+          type="button"
+          onClick={() => onChange({ ...valor, tipo: 'abierto' })}
+          className={`py-2 rounded-lg text-xs font-semibold border-2 transition ${
+            !esCerrado ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-surface text-fg-muted border-border'
+          }`}
+        >
+          Horario abierto
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange({ ...valor, tipo: 'cerrado' })}
+          className={`py-2 rounded-lg text-xs font-semibold border-2 transition ${
+            esCerrado ? 'bg-amber-600 text-white border-amber-600' : 'bg-surface text-fg-muted border-border'
+          }`}
+        >
+          Horario cerrado
+        </button>
+      </div>
+      {!esCerrado ? (
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => onChange({ ...valor, franja: 'manana' })}
+            className={`py-2 rounded-lg text-xs font-medium border transition ${
+              valor.franja === 'manana' ? 'bg-fg text-surface border-fg' : 'bg-surface text-fg-muted border-border'
+            }`}
+          >
+            ☀️ {FRANJAS.manana}
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange({ ...valor, franja: 'tarde' })}
+            className={`py-2 rounded-lg text-xs font-medium border transition ${
+              valor.franja === 'tarde' ? 'bg-fg text-surface border-fg' : 'bg-surface text-fg-muted border-border'
+            }`}
+          >
+            🌤️ {FRANJAS.tarde}
+          </button>
+        </div>
+      ) : (
+        <Fld label="Hora (formato 24h)" required hint="ej. 14:30">
+          <input
+            type="time"
+            step={300}
+            value={valor.hora || ''}
+            onChange={(e) => onChange({ ...valor, hora: e.target.value })}
+            className="input font-mono text-base tracking-wider"
+            style={{ fontVariantNumeric: 'tabular-nums' }}
+          />
+        </Fld>
+      )}
+    </div>
+  );
+}
+
 export function HorarioBloque({ titulo, valor, onChange, fechaEvento, esDesmontaje }) {
   const esCerrado = valor.tipo === 'cerrado';
   const atajos = [

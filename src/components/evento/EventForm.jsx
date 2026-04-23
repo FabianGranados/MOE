@@ -7,7 +7,7 @@ import {
 import { Confirm } from '../shared/Confirm.jsx';
 import { Fld } from '../shared/Fld.jsx';
 import { Stepper } from '../shared/Stepper.jsx';
-import { HorarioBloque } from './HorarioBloque.jsx';
+import { HorarioBloque, HorarioHora } from './HorarioBloque.jsx';
 import { useDirtyGuard } from '../../hooks/useDirtyGuard.jsx';
 import { Cotizador } from './Cotizador.jsx';
 import { TabEvento } from './TabEvento.jsx';
@@ -601,13 +601,21 @@ function Section({ title, hint, children }) {
 function TabLogistica({ ev, set }) {
   const montaje = ev.montaje || { fecha: '', tipo: 'abierto', franja: 'manana', hora: '' };
   const desmontaje = ev.desmontaje || { fecha: '', tipo: 'abierto', franja: 'tarde', hora: '' };
+  const horarioEvento = ev.horarioEvento || { tipo: 'abierto', franja: 'tarde', hora: '' };
 
   return (
     <div className="space-y-5">
-      <div className="bg-surface-sunken border border-border rounded-xl p-3 text-[11px] text-fg-muted">
-        <strong className="text-fg">Opcional en esta etapa.</strong> Estos datos son importantes para bodega y logística.
-        Si ya los tienes, llénalos. Si no, puedes completarlos después.
+      <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-xl p-3 text-[11px] text-amber-900 dark:text-amber-300">
+        <strong>Importante:</strong> estos datos van en la cotización que enviarás al cliente.
+        Se incluyen en el PDF y definen los términos que el cliente acepta al aprobarla.
       </div>
+
+      <Section title="Horario del evento" hint="Usa 24h">
+        <HorarioHora
+          valor={horarioEvento}
+          onChange={(h) => set({ horarioEvento: h })}
+        />
+      </Section>
 
       <Section title="Dirección del evento">
         <Fld label="Dirección exacta">

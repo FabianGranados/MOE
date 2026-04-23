@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ChevronRight } from 'lucide-react';
+import { CheckCircle2, ChevronRight, XCircle } from 'lucide-react';
 import { ContactActions } from '../shared/ContactActions.jsx';
 import { money } from '../../utils/format.js';
 import { calcTotal } from '../../utils/calculos.js';
@@ -11,7 +11,7 @@ const TONES = {
   emerald: { bg: 'bg-emerald-50 dark:bg-emerald-500/10', border: 'border-emerald-200 dark:border-emerald-500/30', txt: 'text-emerald-700 dark:text-emerald-300', dot: 'bg-emerald-500', badge: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300' }
 };
 
-export function Seccion({ title, subtitle, tone, items, onOpen }) {
+export function Seccion({ title, subtitle, tone, items, onOpen, onMarcarVendida, onMarcarPerdida }) {
   if (!items || items.length === 0) return null;
   const t = TONES[tone];
 
@@ -31,37 +31,59 @@ export function Seccion({ title, subtitle, tone, items, onOpen }) {
       </div>
 
       <div className="space-y-2">
-        {items.map(({ ev, razon }, idx) => (
-          <motion.div
-            key={ev.id}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.04, duration: 0.25 }}
-            className="card-hover p-4 flex items-center gap-3"
-          >
-            <div className={`w-2.5 h-2.5 rounded-full ${t.dot} flex-shrink-0`} />
-            <div onClick={() => onOpen(ev.id)} className="flex-1 min-w-0 cursor-pointer">
-              <div className="flex items-center gap-2 text-[10px] font-mono text-fg-muted">
-                <span>{ev.numeroEvento}-{ev.version}</span>
-                <span>·</span>
-                <span>{ev.comercial}</span>
+        {items.map(({ ev, razon }, idx) => {
+          const puedeCerrar = ev.finalizado && ev.estado === 'EN ESPERA' && onMarcarVendida && onMarcarPerdida;
+          return (
+            <motion.div
+              key={ev.id}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.04, duration: 0.25 }}
+              className="card-hover p-3"
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-2.5 h-2.5 rounded-full ${t.dot} flex-shrink-0`} />
+                <div onClick={() => onOpen(ev.id)} className="flex-1 min-w-0 cursor-pointer">
+                  <div className="flex items-center gap-2 text-[10px] font-mono text-fg-muted">
+                    <span>{ev.numeroEvento}-{ev.version}</span>
+                    <span>·</span>
+                    <span>{ev.comercial}</span>
+                  </div>
+                  <h3 className="text-sm font-semibold truncate text-fg">{ev.razonSocial}</h3>
+                  <div className={`text-[11px] mt-0.5 font-medium ${t.txt}`}>{razon}</div>
+                </div>
+                <ContactActions
+                  telefono={ev.contactoTelefono}
+                  email={ev.contactoEmail}
+                  cliente={ev.contactoNombre || ev.razonSocial}
+                  size="sm"
+                />
+                <div onClick={() => onOpen(ev.id)} className="text-right flex-shrink-0 cursor-pointer">
+                  <div className="text-[9px] text-fg-subtle uppercase tracking-wider font-semibold">Total</div>
+                  <div className="text-xs font-mono font-bold text-fg">{money(calcTotal(ev))}</div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-fg-subtle flex-shrink-0" />
               </div>
-              <h3 className="text-sm font-semibold truncate text-fg">{ev.razonSocial}</h3>
-              <div className={`text-[11px] mt-0.5 font-medium ${t.txt}`}>{razon}</div>
-            </div>
-            <ContactActions
-              telefono={ev.contactoTelefono}
-              email={ev.contactoEmail}
-              cliente={ev.contactoNombre || ev.razonSocial}
-              size="sm"
-            />
-            <div onClick={() => onOpen(ev.id)} className="text-right flex-shrink-0 cursor-pointer">
-              <div className="text-[9px] text-fg-subtle uppercase tracking-wider font-semibold">Total</div>
-              <div className="text-xs font-mono font-bold text-fg">{money(calcTotal(ev))}</div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-fg-subtle flex-shrink-0" />
-          </motion.div>
-        ))}
+
+              {puedeCerrar && (
+                <div className="mt-3 pt-3 border-t border-border flex items-center justify-end gap-2">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onMarcarPerdida(ev); }}
+                    className="text-[10px] px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-full font-bold transition active:scale-95 flex items-center gap-1"
+                  >
+                    <XCircle className="w-3 h-3" /> Perdida
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onMarcarVendida(ev); }}
+                    className="text-[10px] px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-bold transition active:scale-95 flex items-center gap-1"
+                  >
+                    <CheckCircle2 className="w-3 h-3" /> Vendida
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          );
+        })}
       </div>
     </section>
   );

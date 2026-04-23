@@ -32,6 +32,7 @@ export const newEvent = (numero, usuario) => ({
   contactoEmail: '',
 
   fechaEvento: '',
+  horarioEvento: { tipo: 'abierto', franja: 'tarde', hora: '' },
   estado: 'EN ESPERA',
   tipoEvento: 'SOCIAL',
   formaPago: 'CONTADO',

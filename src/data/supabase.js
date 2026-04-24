@@ -5,7 +5,10 @@ import { createClient } from '@supabase/supabase-js';
 // OJO: la "publishable key" (antes anon) es pública por diseño — la seguridad
 // real vive en las policies RLS configuradas en la base de datos.
 const FALLBACK_URL = 'https://galjspyrjymlybrltitc.supabase.co';
-const FALLBACK_KEY = 'sb_publishable_CmGxcIjQ7vOS6rXQHhLUBg_kFwdPBdA';
+// Usamos la anon key "legacy" (JWT) porque la publishable key nueva
+// (sb_publishable_*) todavía no es plenamente compatible con todas las
+// funcionalidades del SDK @supabase/supabase-js para auth.
+const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhbGpzcHlyanltbHlicmx0aXRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5OTg4NDQsImV4cCI6MjA5MjU3NDg0NH0.-SNflIZCaDG5KZf58Fj_qX8JDOBXuGXOwa2rqFxrR34';
 
 const URL = import.meta.env.VITE_SUPABASE_URL || FALLBACK_URL;
 const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || FALLBACK_KEY;

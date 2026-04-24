@@ -4,6 +4,7 @@ import { Eye, Package, Plus, Save, Search, Trash2 } from 'lucide-react';
 import { PageHeader } from '../shared/PageHeader.jsx';
 import { EmptyState } from '../shared/EmptyState.jsx';
 import { Confirm } from '../shared/Confirm.jsx';
+import { FotoProducto } from '../shared/FotoProducto.jsx';
 import { FormProducto } from './FormProducto.jsx';
 import { CATEGORIAS } from '../../constants.js';
 import { money } from '../../utils/format.js';
@@ -88,12 +89,8 @@ export function CatalogoView({ catalogo, persistCatalogo, currentUser }) {
               transition={{ delay: Math.min(idx * 0.02, 0.3), duration: 0.2 }}
               className="card overflow-hidden group"
             >
-              <div className="aspect-square bg-gradient-to-br from-surface-sunken to-border/40 flex items-center justify-center relative">
-                {p.foto ? (
-                  <img src={p.foto} alt="" className="w-full h-full object-cover no-drag group-hover:scale-[1.02] transition-transform duration-300" />
-                ) : (
-                  <Package className="w-10 h-10 text-fg-subtle" />
-                )}
+              <div className="aspect-square relative overflow-hidden">
+                <FotoProducto foto={p.foto} nombre={p.nombre} className="group-hover:scale-[1.02] transition-transform duration-300" />
                 <div className="absolute bottom-2 left-2">
                   {p.stock == null ? (
                     <span className="chip bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-500/20 dark:text-violet-300 dark:border-violet-500/30">♾️ Sin límite</span>

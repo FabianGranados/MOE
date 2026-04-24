@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
-import { XCircle } from 'lucide-react';
+import { Info, XCircle } from 'lucide-react';
 import { Modal } from '../shared/Modal.jsx';
 import { Fld } from '../shared/Fld.jsx';
-import { BANCOS, METODOS_PAGO } from '../../constants.js';
+import { InputMoney } from '../shared/InputMoney.jsx';
+import { AVISO_PAGO_OTRO_BANCO, BANCOS, METODOS_PAGO } from '../../constants.js';
 import { hoy, money } from '../../utils/format.js';
 
 export function ModalPago({ open, onCancel, onSave, saldo }) {
@@ -80,12 +81,7 @@ export function ModalPago({ open, onCancel, onSave, saldo }) {
             <input type="date" value={data.fecha} onChange={(e) => setData({ ...data, fecha: e.target.value })} className="input" />
           </Fld>
           <Fld label="Monto" required>
-            <input
-              type="number"
-              value={data.monto || ''}
-              onChange={(e) => setData({ ...data, monto: Number(e.target.value) || 0 })}
-              className="input font-mono"
-            />
+            <InputMoney value={data.monto} onChange={(v) => setData({ ...data, monto: v })} />
           </Fld>
         </div>
 
@@ -101,6 +97,13 @@ export function ModalPago({ open, onCancel, onSave, saldo }) {
             </select>
           </Fld>
         </div>
+
+        {data.banco === 'OTRO' && (
+          <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg p-2 text-[11px] text-amber-900 dark:text-amber-300 flex items-start gap-2">
+            <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+            <span>{AVISO_PAGO_OTRO_BANCO}</span>
+          </div>
+        )}
 
         <Fld label="Referencia">
           <input value={data.referencia} onChange={(e) => setData({ ...data, referencia: e.target.value })} className="input font-mono" />

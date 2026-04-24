@@ -5,6 +5,9 @@ import { addDias, diffDias, fmtFechaCorta } from '../../utils/format.js';
 
 export function HorarioHora({ valor, onChange }) {
   const esCerrado = valor.tipo === 'cerrado';
+  const resumen = esCerrado
+    ? (valor.hora ? `${valor.hora} h (cerrado)` : 'Horario cerrado · falta hora')
+    : `Horario abierto · ${FRANJAS[valor.franja]}`;
   return (
     <div className="border border-border rounded-xl p-4 bg-surface-sunken/50">
       <div className="grid grid-cols-2 gap-2 mb-3">
@@ -60,6 +63,11 @@ export function HorarioHora({ valor, onChange }) {
           />
         </Fld>
       )}
+
+      <div className="mt-3 pt-3 border-t border-border bg-surface rounded-lg p-2">
+        <div className="text-[9px] uppercase tracking-wider text-fg-muted font-bold mb-0.5">Horario elegido</div>
+        <div className="text-xs font-semibold text-fg">🕒 {resumen}</div>
+      </div>
     </div>
   );
 }

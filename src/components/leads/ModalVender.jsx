@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, CheckCircle2, DollarSign, XCircle } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { AlertCircle, CheckCircle2, DollarSign, Info, XCircle } from 'lucide-react';
 import { Modal } from '../shared/Modal.jsx';
 import { Fld } from '../shared/Fld.jsx';
-import { BANCOS, FRANJAS, METODOS_PAGO } from '../../constants.js';
+import { InputMoney } from '../shared/InputMoney.jsx';
+import { AVISO_PAGO_OTRO_BANCO, BANCOS, FRANJAS, METODOS_PAGO } from '../../constants.js';
 import { fmtFechaCorta, fmtFechaLarga, hoy, money } from '../../utils/format.js';
 import { calcTotal } from '../../utils/calculos.js';
 
@@ -126,7 +127,7 @@ export function ModalVender({ open, ev, onCancel, onConfirm }) {
       footer={
         <>
           <button onClick={onCancel} className="btn-ghost">Cancelar</button>
-          <button onClick={submit} className="btn-success">Confirmar VENDIDA</button>
+          <button onClick={submit} className="btn-success">Confirmar venta</button>
         </>
       }
     >
@@ -196,22 +197,35 @@ export function ModalVender({ open, ev, onCancel, onConfirm }) {
             Este pago queda <strong>pendiente de validación por contabilidad</strong>. Adjunta el soporte.
           </p>
 
+          <div className="bg-surface-sunken border border-border rounded-lg p-3 mb-3 text-[11px] space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-fg-muted">Total de la cotización</span>
+              <span className="font-mono font-bold text-fg">{money(total)}</span>
+            </div>
+          </div>
+
           <Fld label="Tipo de pago" required>
             <div className="grid grid-cols-3 gap-2">
               {TIPOS_PAGO.map((tp) => {
                 const active = tipoPago === tp.key;
+                const sugerido = tp.pct != null ? Math.round(total * tp.pct) : null;
                 return (
                   <button
                     key={tp.key}
                     type="button"
                     onClick={() => setTipoPago(tp.key)}
-                    className={`py-2 px-2 rounded-lg text-[11px] font-semibold border-2 transition ${
+                    className={`py-2 px-2 rounded-lg text-[11px] font-semibold border-2 transition text-center ${
                       active
                         ? 'bg-violet-600 text-white border-violet-600'
                         : 'bg-surface text-fg-muted border-border hover:border-border-strong'
                     }`}
                   >
-                    {tp.label}
+                    <div>{tp.label}</div>
+                    {sugerido != null && (
+                      <div className={`text-[9px] mt-0.5 font-mono ${active ? 'text-violet-100' : 'text-fg-subtle'}`}>
+                        {money(sugerido)}
+                      </div>
+                    )}
                   </button>
                 );
               })}
@@ -219,13 +233,12 @@ export function ModalVender({ open, ev, onCancel, onConfirm }) {
           </Fld>
 
           <div className="grid md:grid-cols-2 gap-3 mt-3">
-            <Fld label="Monto pagado" required hint={pctMonto > 0 ? `${pctMonto}% del total` : undefined}>
-              <input
-                type="number"
-                value={monto || ''}
-                onChange={(e) => setMonto(Number(e.target.value) || 0)}
-                className="input font-mono"
-              />
+            <Fld
+              label="Monto pagado por el cliente"
+              required
+              hint={pctMonto > 0 ? `${pctMonto}% del total` : undefined}
+            >
+              <InputMoney value={monto} onChange={setMonto} />
             </Fld>
             <Fld label="Fecha del pago" required>
               <input
@@ -249,6 +262,13 @@ export function ModalVender({ open, ev, onCancel, onConfirm }) {
               </select>
             </Fld>
           </div>
+
+          {banco === 'OTRO' && (
+            <div className="mt-2 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg p-2 text-[11px] text-amber-900 dark:text-amber-300 flex items-start gap-2">
+              <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+              <span>{AVISO_PAGO_OTRO_BANCO}</span>
+            </div>
+          )}
 
           <Fld label="Referencia del pago" className="mt-3">
             <input

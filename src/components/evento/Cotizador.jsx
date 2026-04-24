@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { AlertCircle, Package, Plus, Search, Trash2, XCircle } from 'lucide-react';
 import { Modal } from '../shared/Modal.jsx';
+import { FotoProducto } from '../shared/FotoProducto.jsx';
 import { ModalManual } from './ModalManual.jsx';
 import { CATEGORIAS } from '../../constants.js';
 import { money } from '../../utils/format.js';
@@ -314,12 +315,8 @@ function SelectorProductos({ open, onClose, prods, search, setSearch, cat, setCa
                 onClick={() => onPick(p)}
                 className="text-left card-hover overflow-hidden transition"
               >
-                <div className="aspect-square bg-gradient-to-br from-surface-sunken to-border/40 flex items-center justify-center relative">
-                  {p.foto ? (
-                    <img src={p.foto} alt="" className="w-full h-full object-cover no-drag" />
-                  ) : (
-                    <Package className="w-10 h-10 text-fg-subtle" />
-                  )}
+                <div className="aspect-square relative overflow-hidden">
+                  <FotoProducto foto={p.foto} nombre={p.nombre} />
                   {p.stock != null && (
                     <div className="absolute bottom-1.5 left-1.5">
                       {disponibles === 0 ? (

@@ -207,11 +207,24 @@ async function descargarPDF(ev, setPdfError) {
         }
       }
       if (!fotoOk) {
-        doc.setFillColor(230, 230, 228);
+        doc.setFillColor(245, 245, 244);
         doc.roundedRect(fotoX, fotoY, FOTO_S, FOTO_S, 1, 1, 'F');
+        doc.setDrawColor(225, 29, 72);
+        doc.setLineWidth(0.2);
+        doc.roundedRect(fotoX, fotoY, FOTO_S, FOTO_S, 1, 1, 'S');
+        // Texto con el nombre dentro del placeholder
         doc.setFontSize(6);
-        doc.setTextColor(140, 140, 135);
-        doc.text('SIN FOTO', fotoX + FOTO_S / 2, fotoY + FOTO_S / 2 + 1, { align: 'center' });
+        doc.setTextColor(87, 83, 78);
+        doc.setFont('helvetica', 'bold');
+        const raw = it.nombre || 'Producto';
+        const lines = doc.splitTextToSize(raw, FOTO_S - 2);
+        const maxLines = Math.min(lines.length, 4);
+        const lineH = 2.2;
+        const startY = fotoY + FOTO_S / 2 - ((maxLines - 1) * lineH) / 2 + 0.7;
+        for (let i = 0; i < maxLines; i++) {
+          doc.text(lines[i], fotoX + FOTO_S / 2, startY + i * lineH, { align: 'center' });
+        }
+        doc.setFont('helvetica', 'normal');
         doc.setTextColor(28, 25, 23);
       }
 

@@ -7,6 +7,7 @@ import {
 import { Confirm } from '../shared/Confirm.jsx';
 import { Fld } from '../shared/Fld.jsx';
 import { Stepper } from '../shared/Stepper.jsx';
+import { InputTel, InputEmail } from '../shared/Inputs.jsx';
 import { HorarioBloque, HorarioHora } from './HorarioBloque.jsx';
 import { PersonasLista } from './PersonasLista.jsx';
 import { useDirtyGuard } from '../../hooks/useDirtyGuard.jsx';
@@ -18,7 +19,7 @@ import {
   FORMAS_PAGO, TIPO_EVENTO, TIPOS_CLIENTE, TIPOS_DOCUMENTO_COTIZACION,
   TIPOS_DOCUMENTO_ID, TIPOS_PERSONA
 } from '../../constants.js';
-import { money, tiempoRelativo } from '../../utils/format.js';
+import { buildMapsUrl, esMapsAutoUrl, money, tiempoRelativo } from '../../utils/format.js';
 import { aplicaIva } from '../../utils/calculos.js';
 import { validarDatosCliente, validarEventoBorrador } from '../../utils/validaciones.js';
 
@@ -512,10 +513,10 @@ function TabComercial({ ev, set, bloqueado, puedeEnviar, errores, onFinalize, mo
             <input value={ev.contactoNombre} onChange={(e) => set({ contactoNombre: e.target.value })} className="input" />
           </Fld>
           <Fld label="Teléfono">
-            <input value={ev.contactoTelefono} onChange={(e) => set({ contactoTelefono: e.target.value })} placeholder="+57 300 123 4567" className="input font-mono" />
+            <InputTel value={ev.contactoTelefono} onChange={(v) => set({ contactoTelefono: v })} />
           </Fld>
           <Fld label="Email">
-            <input type="email" value={ev.contactoEmail} onChange={(e) => set({ contactoEmail: e.target.value })} placeholder="correo@dominio.com" className="input" />
+            <InputEmail value={ev.contactoEmail} onChange={(v) => set({ contactoEmail: v })} />
           </Fld>
         </div>
       </Section>
@@ -658,12 +659,17 @@ function TabLogistica({ ev, set }) {
         />
       </Section>
 
-      <Section title="Lugar del evento">
+      <Section title="Lugar del evento" hint="El link de Maps se genera solo">
         <div className="grid md:grid-cols-2 gap-3">
           <Fld label="Dirección exacta">
             <input
               value={ev.direccion || ''}
-              onChange={(e) => set({ direccion: e.target.value })}
+              onChange={(e) => {
+                const v = e.target.value;
+                const patch = { direccion: v };
+                if (esMapsAutoUrl(ev.mapsUrl)) patch.mapsUrl = buildMapsUrl(v, ev.ciudad);
+                set(patch);
+              }}
               placeholder="Cra 11 # 82-01"
               className="input"
             />
@@ -671,14 +677,19 @@ function TabLogistica({ ev, set }) {
           <Fld label="Ciudad / municipio">
             <input
               value={ev.ciudad || ''}
-              onChange={(e) => set({ ciudad: e.target.value })}
+              onChange={(e) => {
+                const v = e.target.value;
+                const patch = { ciudad: v };
+                if (esMapsAutoUrl(ev.mapsUrl)) patch.mapsUrl = buildMapsUrl(ev.direccion, v);
+                set(patch);
+              }}
               placeholder="Bogotá"
               className="input"
             />
           </Fld>
         </div>
         <div className="mt-3">
-          <Fld label="Link Google Maps">
+          <Fld label="Link Google Maps" hint={esMapsAutoUrl(ev.mapsUrl) ? 'Generado automáticamente' : 'Personalizado'}>
             <div className="flex gap-2">
               <input
                 value={ev.mapsUrl || ''}
@@ -695,6 +706,16 @@ function TabLogistica({ ev, set }) {
                 >
                   Abrir
                 </a>
+              )}
+              {!esMapsAutoUrl(ev.mapsUrl) && (
+                <button
+                  type="button"
+                  onClick={() => set({ mapsUrl: buildMapsUrl(ev.direccion, ev.ciudad) })}
+                  title="Volver al link automático"
+                  className="px-3 flex items-center border border-border hover:bg-surface-sunken rounded-lg text-[11px] font-medium"
+                >
+                  ↺
+                </button>
               )}
             </div>
           </Fld>

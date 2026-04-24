@@ -22,8 +22,8 @@ export const FORMAS_PAGO = ['CONTADO', 'CREDICONTADO', 'CREDITO'];
 export const CATEGORIAS = ['Mobiliario', 'Mantelería', 'Iluminación', 'Decoración', 'Servicios', 'Otros'];
 
 export const TIPOS_DOCUMENTO_COTIZACION = [
-  { key: 'COTIZACION', label: 'Cotización', sub: 'Con IVA 19%', icon: '📄' },
-  { key: 'REMISION',   label: 'Remisión',   sub: 'Sin IVA',     icon: '📋' }
+  { key: 'COTIZACION', label: 'Cotización',        sub: 'Con IVA 19%', icon: '📄' },
+  { key: 'REMISION',   label: 'Remisión comercial', sub: 'Sin IVA',    icon: '📋' }
 ];
 
 export const TIPOS_PERSONA = [
@@ -52,7 +52,10 @@ export const MOTIVOS_PERDIDA = [
 ];
 
 export const METODOS_PAGO = ['Transferencia', 'Efectivo', 'Tarjeta', 'Cheque'];
-export const BANCOS = ['BANCOLOMBIA', 'DAVIVIENDA', 'BBVA', 'BOGOTÁ', 'OTRO'];
+export const BANCOS = ['BANCOLOMBIA', 'DAVIVIENDA', 'NEQUI', 'DAVIPLATA', 'B-REVE', 'OTRO'];
+
+export const AVISO_PAGO_OTRO_BANCO =
+  'Si el pago viene de otro banco puede tardar entre 24 y 72 horas en reflejarse.';
 
 export const PRODUCTOS_INICIAL = [
   { id: 'p1', codigo: 'MESA-RED-2M', nombre: 'Mesa redonda 2mts x 80cm con mantel negro', categoria: 'Mobiliario', precio: 65000, stock: 40, foto: '', activo: true },

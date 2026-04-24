@@ -1,5 +1,6 @@
 import { Plus, Trash2, User } from 'lucide-react';
 import { Fld } from '../shared/Fld.jsx';
+import { InputTel } from '../shared/Inputs.jsx';
 
 export function PersonasLista({ personas = [], onChange, minimo = 2, titulo = 'Personas', hint }) {
   const lista = personas.length >= minimo ? personas : [
@@ -66,11 +67,9 @@ export function PersonasLista({ personas = [], onChange, minimo = 2, titulo = 'P
                   />
                 </Fld>
                 <Fld label="Celular">
-                  <input
+                  <InputTel
                     value={p.celular || ''}
-                    onChange={(e) => update(i, { celular: e.target.value })}
-                    placeholder="+57 300 123 4567"
-                    className="input font-mono"
+                    onChange={(v) => update(i, { celular: v })}
                   />
                 </Fld>
               </div>

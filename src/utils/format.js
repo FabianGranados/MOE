@@ -69,3 +69,11 @@ export const tiempoRelativo = (d) => {
 
 export const initials = (n) =>
   (n || '').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+
+const MAPS_BASE = 'https://www.google.com/maps/search/?api=1&query=';
+export const buildMapsUrl = (direccion, ciudad) => {
+  const q = [direccion, ciudad].filter((s) => s && String(s).trim()).join(', ');
+  return q ? MAPS_BASE + encodeURIComponent(q) : '';
+};
+// True si la URL luce como una auto-generada nuestra
+export const esMapsAutoUrl = (url) => !url || String(url).startsWith(MAPS_BASE);

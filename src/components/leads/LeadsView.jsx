@@ -104,7 +104,7 @@ export function LeadsView({ events, currentUser, onOpen, onNew, onMarcarVendida,
                       <EstadoBadge estado={e.estado} />
                       {(e.tipoDocumento || 'COTIZACION') === 'REMISION' && (
                         <span className="chip bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30">
-                          📋 Remisión
+                          📋 Remisión comercial
                         </span>
                       )}
                       {e.llevaProveedorExterno && (

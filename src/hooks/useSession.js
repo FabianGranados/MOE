@@ -24,8 +24,19 @@ export function useSession() {
       .select('id,email,nombre,alias,role_id,activo')
       .eq('id', authUser.id)
       .maybeSingle();
+    if (error) {
+      console.error('[useSession] ERROR leyendo public.usuarios:', error);
+      console.error('  → auth.uid():', authUser.id);
+      console.error('  → email:', authUser.email);
+      console.error('  → code:', error.code, '· details:', error.details, '· hint:', error.hint);
+    }
+    if (!data) {
+      console.warn('[useSession] Usuario sin fila en public.usuarios');
+      console.warn('  → auth.uid():', authUser.id);
+      console.warn('  → email:', authUser.email);
+      console.warn('  Fix: insertar fila en public.usuarios con ese id y role_id.');
+    }
     if (error || !data) {
-      console.warn('[useSession] usuario no vinculado:', authUser.email, error?.message);
       return {
         id: authUser.id,
         email: authUser.email,

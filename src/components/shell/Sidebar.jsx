@@ -55,13 +55,13 @@ export function Sidebar({ menu, section, onNavigate, currentUser, onLogout, them
           </button>
           <div className="flex items-center gap-2.5 p-2">
             <Avatar
-              name={currentUser.nombre}
+              name={currentUser.nombre || currentUser.email || 'Usuario'}
               size="sm"
-              color={ROLES[currentUser.rol].accent}
+              color={(ROLES[currentUser.rol] || {}).accent || 'bg-stone-500'}
             />
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-semibold text-white truncate">{currentUser.nombre}</div>
-              <div className="text-[10px] text-stone-500 truncate">{ROLES[currentUser.rol].short}</div>
+              <div className="text-xs font-semibold text-white truncate">{currentUser.nombre || currentUser.email}</div>
+              <div className="text-[10px] text-stone-500 truncate">{(ROLES[currentUser.rol] || {}).short || 'Sin rol asignado'}</div>
             </div>
             <button
               onClick={onLogout}

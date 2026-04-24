@@ -2,7 +2,8 @@ import { LogOut, Menu, Moon, Search, Sun } from 'lucide-react';
 import { ROLES } from '../../constants.js';
 
 export function Topbar({ currentUser, onLogout, onOpenMenu, onOpenSearch, theme, onToggleTheme }) {
-  const firstName = currentUser.nombre.split(' ')[0];
+  const rolMeta = ROLES[currentUser.rol] || { accent: 'bg-stone-500', short: 'Usuario' };
+  const firstName = (currentUser.nombre || currentUser.email || 'Usuario').split(' ')[0];
   return (
     <header className="sticky top-0 z-20 h-16 bg-surface/80 backdrop-blur-xl border-b border-border px-4 md:px-8 flex items-center justify-between">
       <div className="flex items-center gap-3 min-w-0">
@@ -41,9 +42,9 @@ export function Topbar({ currentUser, onLogout, onOpenMenu, onOpenSearch, theme,
         </button>
 
         <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border bg-surface-sunken">
-          <div className={`w-2 h-2 rounded-full ${ROLES[currentUser.rol].accent}`} />
+          <div className={`w-2 h-2 rounded-full ${rolMeta.accent}`} />
           <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
-            {ROLES[currentUser.rol].short}
+            {rolMeta.short}
           </span>
         </div>
 

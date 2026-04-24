@@ -7,18 +7,23 @@
 -- =====================================================================
 
 -- Helper: ¿cuál es el rol del usuario autenticado?
+--
+-- IMPORTANTE: estas funciones deben ser 'security definer' para NO
+-- disparar las policies de la tabla public.usuarios que consultan.
+-- Sin esto se genera recursión infinita (stack depth error 54001)
+-- cuando alguna policy usa my_role() en la misma tabla usuarios.
 create or replace function public.my_role()
-returns text language sql stable as $$
+returns text language sql stable security definer set search_path = public as $$
   select role_id from public.usuarios where id = auth.uid();
 $$;
 
 create or replace function public.my_alias()
-returns text language sql stable as $$
+returns text language sql stable security definer set search_path = public as $$
   select alias from public.usuarios where id = auth.uid();
 $$;
 
 create or replace function public.has_perm(p_permission text)
-returns boolean language sql stable as $$
+returns boolean language sql stable security definer set search_path = public as $$
   select exists(
     select 1 from public.role_permissions rp
     join public.usuarios u on u.role_id = rp.role_id

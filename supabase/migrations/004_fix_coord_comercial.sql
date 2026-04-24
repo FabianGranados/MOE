@@ -80,11 +80,25 @@ create policy proveedor_cots_insert on public.proveedor_cotizaciones
     public.my_role() in ('asesor_comercial', 'direccion_comercial')
   );
 
--- ---- 2. Completar workflow_steps que fallaron ---------------------
+-- ---- 2. Completar workflow_types y workflow_steps ----------------
+
+insert into public.workflow_types (id, nombre, descripcion) values
+  ('pago_proveedor', 'Pago a proveedor externo',
+   'OT / cuenta de cobro de proveedor: revisión contable → validación control → ejecución financiera'),
+  ('descuento_especial', 'Descuento superior al umbral autorizado',
+   'Escala a Dirección Comercial y Gerencia según el porcentaje'),
+  ('anulacion_venta', 'Anulación de venta ya registrada',
+   'Requiere visto bueno de Dirección Comercial y registro contable')
+on conflict (id) do nothing;
 
 insert into public.workflow_steps (workflow_type, orden, nombre, role_id, sla_horas, obligatorio) values
-  ('anulacion_venta', 1, 'Visto bueno Dirección Comercial', 'direccion_comercial',  24, true),
-  ('anulacion_venta', 2, 'Registro contable',                'asistente_contable',  48, true)
+  ('pago_proveedor',    1, 'Revisión de soportes y fiscal',    'asistente_contable',      48, true),
+  ('pago_proveedor',    2, 'Validación operativa',             'coord_admin_control',     48, true),
+  ('pago_proveedor',    3, 'Ejecución del pago (viernes)',     'coord_admin_financiero', 168, true),
+  ('descuento_especial',1, 'Aprobación Dir. Comercial',        'direccion_comercial',     24, true),
+  ('descuento_especial',2, 'Aprobación Gerencia',              'gerencia_general',        48, true),
+  ('anulacion_venta',   1, 'Visto bueno Dirección Comercial',  'direccion_comercial',     24, true),
+  ('anulacion_venta',   2, 'Registro contable',                'asistente_contable',      48, true)
 on conflict (workflow_type, orden) do nothing;
 
 -- ---- 3. Rangos de comisión default --------------------------------

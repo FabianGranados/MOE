@@ -21,11 +21,11 @@ import { newEvent, nextNumero, diffDatos } from '../../utils/eventos.js';
 import { ErrorBoundary } from '../shared/ErrorBoundary.jsx';
 
 const MENU = [
-  { key: 'hoy',        label: 'HOY',                 short: 'Hoy',      icon: Sun,             roles: ['coord_comercial', 'asesor_comercial'] },
-  { key: 'dashboard',  label: 'Dashboard',           short: 'Dashboard', icon: LayoutDashboard, roles: ['gerencia_general', 'coord_comercial'] },
-  { key: 'leads',      label: 'Leads & Cotizaciones', short: 'Leads',   icon: Briefcase,       roles: ['gerencia_general', 'coord_comercial', 'asesor_comercial'] },
-  { key: 'comisiones', label: 'Comisiones',          short: 'Comisión', icon: DollarSign,      roles: ['gerencia_general', 'coord_comercial', 'asesor_comercial'] },
-  { key: 'catalogo',   label: 'Catálogo',            short: 'Catálogo', icon: Package,         roles: ['gerencia_general', 'coord_comercial', 'asesor_comercial'] }
+  { key: 'hoy',        label: 'HOY',                  short: 'Hoy',       icon: Sun,             roles: ['direccion_comercial', 'asesor_comercial'] },
+  { key: 'dashboard',  label: 'Dashboard',            short: 'Dashboard', icon: LayoutDashboard, roles: ['gerencia_general', 'direccion_comercial', 'coord_admin_financiero', 'coord_admin_control'] },
+  { key: 'leads',      label: 'Leads & Cotizaciones', short: 'Leads',     icon: Briefcase,       roles: ['gerencia_general', 'direccion_comercial', 'asesor_comercial', 'coord_admin_control', 'asistente_contable'] },
+  { key: 'comisiones', label: 'Comisiones',           short: 'Comisión',  icon: DollarSign,      roles: ['gerencia_general', 'direccion_comercial', 'asesor_comercial', 'coord_admin_financiero', 'contador_externo'] },
+  { key: 'catalogo',   label: 'Catálogo',             short: 'Catálogo',  icon: Package,         roles: ['gerencia_general', 'direccion_comercial', 'asesor_comercial', 'jefe_bodega', 'coord_logistica'] }
 ];
 
 export function Shell({

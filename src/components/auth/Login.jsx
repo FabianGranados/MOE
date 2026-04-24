@@ -4,9 +4,9 @@ import { AlertCircle, ChevronRight, Eye, EyeOff, KeyRound, Loader2, Mail, Sparkl
 import { Avatar } from '../shared/Avatar.jsx';
 
 const DEMOS = [
-  { rol: 'Gerencia',        email: 'admin@decolounge.co',   pass: 'demo1234', color: 'bg-stone-900' },
-  { rol: 'Coord. Comercial', email: 'johanna@decolounge.co', pass: 'demo1234', color: 'bg-rose-600' },
-  { rol: 'Asesor Comercial', email: 'ammy@decolounge.co',    pass: 'demo1234', color: 'bg-pink-500' }
+  { rol: 'Gerencia',         email: 'admin@decolounge.com.co',          pass: 'demo1234', color: 'bg-stone-900' },
+  { rol: 'Dir. Comercial',   email: 'cordicomercial@decolounge.com.co', pass: 'demo1234', color: 'bg-rose-600' },
+  { rol: 'Asesor Comercial', email: 'asesor1@decolounge.com.co',        pass: 'demo1234', color: 'bg-pink-500' }
 ];
 
 export function Login({ onLogin }) {

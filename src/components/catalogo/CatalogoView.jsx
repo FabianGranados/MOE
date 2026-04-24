@@ -16,7 +16,7 @@ export function CatalogoView({ catalogo, persistCatalogo, currentUser }) {
   const [search, setSearch] = useState('');
   const [cat, setCat] = useState('TODAS');
 
-  const puedeCrearEditar = ['gerencia_general', 'coord_comercial'].includes(currentUser.rol);
+  const puedeCrearEditar = ['gerencia_general', 'direccion_comercial', 'jefe_bodega'].includes(currentUser.rol);
   const puedeEliminar = currentUser.rol === 'gerencia_general';
   const esAsesor = currentUser.rol === 'asesor_comercial';
 

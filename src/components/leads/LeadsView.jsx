@@ -34,7 +34,7 @@ export function LeadsView({ events, currentUser, onOpen, onNew, onMarcarVendida,
       );
   }, [events, filtro, search]);
 
-  const puedeCrear = ['coord_comercial', 'asesor_comercial'].includes(currentUser.rol);
+  const puedeCrear = ['direccion_comercial', 'asesor_comercial', 'gerencia_general'].includes(currentUser.rol);
 
   return (
     <div>

@@ -1,38 +1,124 @@
 import { useCallback, useEffect, useState } from 'react';
 import { loadJSON, saveJSON, storage } from '../data/storage.js';
+import { supabase, supabaseEnabled } from '../data/supabase.js';
+import { audit } from '../data/audit.js';
 import { USUARIOS } from '../constants.js';
 
+/**
+ * Hook de sesión.
+ * - Si Supabase está activo: usa supabase.auth (fuente de verdad).
+ * - Si no: cae al flujo demo en localStorage.
+ *
+ * El currentUser expuesto tiene la forma:
+ *   { id, email, nombre, alias, rol }
+ */
 export function useSession() {
   const [loading, setLoading] = useState(true);
-  const [session, setSession] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
-  useEffect(() => {
-    (async () => {
-      const s = await loadJSON('session', null);
-      if (s) setSession(s);
-      setLoading(false);
-    })();
+  // --------- Modo Supabase ----------------------------------------------
+  const loadSupabaseUser = useCallback(async (authUser) => {
+    if (!authUser) return null;
+    const { data, error } = await supabase
+      .from('usuarios')
+      .select('id,email,nombre,alias,role_id,activo')
+      .eq('id', authUser.id)
+      .maybeSingle();
+    if (error || !data) {
+      console.warn('[useSession] usuario no vinculado:', authUser.email, error?.message);
+      return {
+        id: authUser.id,
+        email: authUser.email,
+        nombre: authUser.email,
+        alias: null,
+        rol: null,
+        sinVincular: true
+      };
+    }
+    if (data.activo === false) {
+      console.warn('[useSession] usuario inactivo');
+      await supabase.auth.signOut();
+      return null;
+    }
+    return {
+      id: data.id,
+      email: data.email,
+      nombre: data.nombre,
+      alias: data.alias,
+      rol: data.role_id
+    };
   }, []);
 
+  useEffect(() => {
+    if (supabaseEnabled) {
+      let mounted = true;
+      (async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mounted) return;
+        const u = await loadSupabaseUser(session?.user);
+        setCurrentUser(u);
+        setLoading(false);
+      })();
+      const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        const u = await loadSupabaseUser(session?.user);
+        setCurrentUser(u);
+      });
+      return () => { mounted = false; sub?.subscription?.unsubscribe(); };
+    }
+    // Modo demo: lee de localStorage
+    (async () => {
+      const s = await loadJSON('session', null);
+      if (s) {
+        const u = USUARIOS.find((x) => x.id === s.userId);
+        if (u) setCurrentUser({ id: u.id, email: u.email, nombre: u.nombre, alias: u.alias, rol: u.rol });
+      }
+      setLoading(false);
+    })();
+  }, [loadSupabaseUser]);
+
+  // --------- Login ------------------------------------------------------
   const login = useCallback(async (email, password) => {
+    if (supabaseEnabled) {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.toLowerCase().trim(),
+        password: password.trim()
+      });
+      if (error) return { ok: false, error: 'Email o contraseña incorrectos' };
+      const u = await loadSupabaseUser(data.user);
+      if (!u) return { ok: false, error: 'Usuario inactivo o no vinculado' };
+      if (u.sinVincular) {
+        await supabase.auth.signOut();
+        return { ok: false, error: 'Tu cuenta existe pero no está vinculada a un rol. Contacta a Gerencia.' };
+      }
+      setCurrentUser(u);
+      audit({ modulo: 'auth', accion: 'login', entidadTipo: 'usuario', entidadId: u.id }, u);
+      return { ok: true, user: u };
+    }
+    // Modo demo
     const u = USUARIOS.find(
       (x) =>
         x.email.toLowerCase() === email.toLowerCase().trim() &&
         x.password === password.trim()
     );
     if (!u) return { ok: false, error: 'Email o contraseña incorrectos' };
-    const s = { userId: u.id };
-    setSession(s);
-    await saveJSON('session', s);
-    return { ok: true, user: u };
-  }, []);
+    const user = { id: u.id, email: u.email, nombre: u.nombre, alias: u.alias, rol: u.rol };
+    setCurrentUser(user);
+    await saveJSON('session', { userId: u.id });
+    audit({ modulo: 'auth', accion: 'login', entidadTipo: 'usuario', entidadId: u.id }, user);
+    return { ok: true, user };
+  }, [loadSupabaseUser]);
 
   const logout = useCallback(async () => {
-    setSession(null);
-    await storage.delete('session');
-  }, []);
+    if (currentUser) {
+      audit({ modulo: 'auth', accion: 'logout', entidadTipo: 'usuario', entidadId: currentUser.id }, currentUser);
+    }
+    if (supabaseEnabled) {
+      await supabase.auth.signOut();
+    } else {
+      await storage.delete('session');
+    }
+    setCurrentUser(null);
+  }, [currentUser]);
 
-  const currentUser = session ? USUARIOS.find((u) => u.id === session.userId) : null;
-
-  return { loading, session, currentUser, login, logout };
+  return { loading, currentUser, login, logout, session: currentUser };
 }

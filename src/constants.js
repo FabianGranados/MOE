@@ -1,13 +1,24 @@
 export const ROLES = {
-  gerencia_general: { label: 'Gerencia General', short: 'Gerencia', accent: 'bg-stone-900' },
-  coord_comercial: { label: 'Coordinador Comercial', short: 'Coord. Comercial', accent: 'bg-rose-600' },
-  asesor_comercial: { label: 'Asesor Comercial', short: 'Asesor', accent: 'bg-pink-500' }
+  gerencia_general:       { label: 'Gerencia General',              short: 'Gerencia',       accent: 'bg-stone-900' },
+  coord_admin_financiero: { label: 'Coord. Admin. y Financiero',    short: 'Financiera',     accent: 'bg-emerald-700' },
+  coord_admin_control:    { label: 'Coord. Admin. de Control',      short: 'Control',        accent: 'bg-amber-700' },
+  direccion_comercial:    { label: 'Dirección Comercial',           short: 'Dir. Comercial', accent: 'bg-rose-600' },
+  asesor_comercial:       { label: 'Asesor Comercial',              short: 'Asesor',         accent: 'bg-pink-500' },
+  asistente_contable:     { label: 'Asistente Contable',            short: 'Contable',       accent: 'bg-violet-600' },
+  jefe_bodega:            { label: 'Jefe de Bodega',                short: 'Bodega',         accent: 'bg-orange-600' },
+  coord_logistica:        { label: 'Coord. Logística',              short: 'Logística',      accent: 'bg-sky-600' },
+  rrhh_sst:               { label: 'RRHH / SST',                    short: 'RRHH',           accent: 'bg-teal-600' },
+  contador_externo:       { label: 'Contador Externo',              short: 'Contador',       accent: 'bg-indigo-600' },
+  cliente:                { label: 'Cliente',                       short: 'Cliente',        accent: 'bg-stone-500' }
 };
 
+// Usuarios DEMO (modo localStorage). En modo Supabase los usuarios reales
+// viven en la base de datos y estos solo sirven como credenciales de prueba
+// visibles en la pantalla de login.
 export const USUARIOS = [
-  { id: 'u1', nombre: 'Fabian Granados', email: 'admin@decolounge.co', password: 'demo1234', rol: 'gerencia_general', alias: null },
-  { id: 'u2', nombre: 'Johanna Ruiz', email: 'johanna@decolounge.co', password: 'demo1234', rol: 'coord_comercial', alias: 'JOHANNA' },
-  { id: 'u3', nombre: 'Ammy Castro', email: 'ammy@decolounge.co', password: 'demo1234', rol: 'asesor_comercial', alias: 'AMMY' }
+  { id: 'u1', nombre: 'Fabian Granados', email: 'admin@decolounge.com.co',          password: 'demo1234', rol: 'gerencia_general',    alias: 'FABIAN' },
+  { id: 'u2', nombre: 'Johanna Ruiz',    email: 'cordicomercial@decolounge.com.co', password: 'demo1234', rol: 'direccion_comercial', alias: 'JOHANNA' },
+  { id: 'u3', nombre: 'Ammy Castro',     email: 'asesor1@decolounge.com.co',        password: 'demo1234', rol: 'asesor_comercial',    alias: 'AMMY' }
 ];
 
 export const ESTADOS_META = {

@@ -2,12 +2,17 @@ import { Login } from './components/auth/Login.jsx';
 import { Shell } from './components/shell/Shell.jsx';
 import { SpinnerPage } from './components/shared/Skeleton.jsx';
 import { SinVincular } from './components/shared/SinVincular.jsx';
+import { VideoDemo } from './components/shared/VideoDemo.jsx';
 import { PRODUCTOS_INICIAL, RANGOS_COMISION_DEFAULT, ROLES } from './constants.js';
 import { DirtyGuardProvider } from './hooks/useDirtyGuard.jsx';
 import { usePersistedState } from './hooks/usePersistedState.js';
 import { useSession } from './hooks/useSession.js';
 
 export default function MOEApp() {
+  if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('demo') === 'video') {
+    return <VideoDemo />;
+  }
+
   const { loading, currentUser, login, logout } = useSession();
   const [events, persistEvents, eventsHydrated]       = usePersistedState('events', []);
   const [catalogo, persistCatalogo, catalogoHydrated] = usePersistedState('catalogo', PRODUCTOS_INICIAL);

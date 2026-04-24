@@ -9,3 +9,8 @@ dist-ssr
 *.log
 .env
 .env.local
+.env.*.local
+
+# Supabase CLI local
+supabase/.temp
+supabase/.branches

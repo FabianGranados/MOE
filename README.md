@@ -1,6 +1,14 @@
 # MOE · Decolounge
 
-**Master Operativo de Eventos** — App modular para gestionar leads, cotizaciones, comisiones, catálogo e inventario de Decolounge.
+**ERP operativo de eventos y alquiler** — construido sobre estándares de Rental ERP, CRM, Procurement Workflow y control cruzado financiero.
+
+Integra comercial, inventario, logística, compras, cartera y tesorería con **11 roles** y trazabilidad total (audit log + cadenas de aprobación).
+
+## Modos de operación
+
+- **Demo** (por defecto) → datos en `localStorage`, usuarios hardcoded. Perfecto para probar.
+- **Producción** → backend real en **Supabase** (Postgres + Auth + RLS).
+  Para activarlo: ver [`supabase/README.md`](./supabase/README.md) · toma ~5 min.
 
 ## Arrancar en local
 

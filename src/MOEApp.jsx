@@ -5,11 +5,12 @@ import { SinVincular } from './components/shared/SinVincular.jsx';
 import { PRODUCTOS_INICIAL, RANGOS_COMISION_DEFAULT, ROLES } from './constants.js';
 import { DirtyGuardProvider } from './hooks/useDirtyGuard.jsx';
 import { usePersistedState } from './hooks/usePersistedState.js';
+import { useCotizaciones } from './hooks/useCotizaciones.js';
 import { useSession } from './hooks/useSession.js';
 
 export default function MOEApp() {
   const { loading, currentUser, login, logout } = useSession();
-  const [events, persistEvents, eventsHydrated]       = usePersistedState('events', []);
+  const [events, persistEvents, eventsHydrated]       = useCotizaciones();
   const [catalogo, persistCatalogo, catalogoHydrated] = usePersistedState('catalogo', PRODUCTOS_INICIAL);
   const [rangos, persistRangos, rangosHydrated]       = usePersistedState('rangos-comision', RANGOS_COMISION_DEFAULT);
 

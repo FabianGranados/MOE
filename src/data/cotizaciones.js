@@ -16,14 +16,28 @@ import { supabase } from './supabase.js';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUUID = (v) => UUID_RE.test(String(v || ''));
-const toUUID = (v) => (isUUID(v) ? v : (crypto?.randomUUID?.() || fallbackUUID()));
 
-function fallbackUUID() {
-  // Para entornos sin crypto.randomUUID (poco común). RFC4122 v4 simple.
+// Mapeo estable legacy-id ('evt_*', 'it_*', 'pg_*') → UUID.
+// Vive en memoria del módulo: misma sesión = mismo UUID = sin duplicados.
+// Al recargar la página, los datos se traen de DB con UUIDs, así que el
+// cache deja de ser necesario.
+const idCache = new Map();
+
+function genUUID() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
     return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
   });
+}
+
+function toUUID(v) {
+  const s = String(v || '');
+  if (isUUID(s)) return s;
+  if (idCache.has(s)) return idCache.get(s);
+  const u = genUUID();
+  if (s) idCache.set(s, u);
+  return u;
 }
 
 // ---------------------------------------------------------------------

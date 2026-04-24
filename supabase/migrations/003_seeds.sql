@@ -217,8 +217,8 @@ insert into public.workflow_steps (workflow_type, orden, nombre, role_id, sla_ho
   ('descuento_especial', 1, 'Aprobación Dir. Comercial', 'direccion_comercial', 24, true),
   ('descuento_especial', 2, 'Aprobación Gerencia',       'gerencia_general',    48, true),
 
-  ('anulacion_venta', 1, 'Visto bueno Coord. Comercial', 'coord_comercial',         24, true),
-  ('anulacion_venta', 2, 'Registro contable',            'asistente_contable',      48, true)
+  ('anulacion_venta', 1, 'Visto bueno Dirección Comercial', 'direccion_comercial',   24, true),
+  ('anulacion_venta', 2, 'Registro contable',                'asistente_contable',   48, true)
 on conflict (workflow_type, orden) do nothing;
 
 -- =====================================================================

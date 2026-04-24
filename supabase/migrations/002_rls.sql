@@ -101,7 +101,7 @@ create policy productos_select on public.productos
 create policy productos_write on public.productos
   for all using (
     public.my_role() in (
-      'gerencia_general', 'jefe_bodega', 'direccion_comercial', 'coord_comercial'
+      'gerencia_general', 'jefe_bodega', 'direccion_comercial'
     )
   );
 
@@ -114,16 +114,16 @@ create policy cotizaciones_select on public.cotizaciones
   for select using (
     public.my_role() in (
       'gerencia_general', 'coord_admin_financiero', 'coord_admin_control',
-      'direccion_comercial', 'coord_comercial',
+      'direccion_comercial',
       'jefe_bodega', 'coord_logistica', 'asistente_contable', 'contador_externo'
     )
     or (public.my_role() = 'asesor_comercial' and comercial_id = auth.uid())
   );
 
--- Crear: asesores, coordinación comercial, dirección comercial
+-- Crear: asesores, dirección comercial, gerencia
 create policy cotizaciones_insert on public.cotizaciones
   for insert with check (
-    public.my_role() in ('asesor_comercial', 'coord_comercial', 'direccion_comercial', 'gerencia_general')
+    public.my_role() in ('asesor_comercial', 'direccion_comercial', 'gerencia_general')
   );
 
 -- Actualizar: dueño (asesor) o supervisión comercial / gerencia / bodega (para logística)
@@ -131,7 +131,7 @@ create policy cotizaciones_update on public.cotizaciones
   for update using (
     (public.my_role() = 'asesor_comercial' and comercial_id = auth.uid())
     or public.my_role() in (
-      'gerencia_general', 'coord_comercial', 'direccion_comercial',
+      'gerencia_general', 'direccion_comercial',
       'jefe_bodega', 'coord_logistica'
     )
   );
@@ -161,7 +161,7 @@ create policy pagos_select on public.pagos
     public.my_role() in (
       'gerencia_general', 'coord_admin_financiero', 'coord_admin_control',
       'asistente_contable', 'contador_externo',
-      'direccion_comercial', 'coord_comercial'
+      'direccion_comercial'
     )
     or (
       public.my_role() = 'asesor_comercial' and exists(
@@ -175,7 +175,7 @@ create policy pagos_select on public.pagos
 create policy pagos_insert on public.pagos
   for insert with check (
     public.my_role() in (
-      'asesor_comercial', 'coord_comercial', 'direccion_comercial', 'gerencia_general'
+      'asesor_comercial', 'direccion_comercial', 'gerencia_general'
     )
   );
 
@@ -266,7 +266,7 @@ create policy proveedor_cots_read on public.proveedor_cotizaciones
 
 create policy proveedor_cots_insert on public.proveedor_cotizaciones
   for insert with check (
-    public.my_role() in ('asesor_comercial', 'coord_comercial', 'direccion_comercial')
+    public.my_role() in ('asesor_comercial', 'direccion_comercial')
   );
 
 create policy proveedor_cots_update on public.proveedor_cotizaciones

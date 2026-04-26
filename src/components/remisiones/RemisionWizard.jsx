@@ -8,6 +8,7 @@ import { Stepper } from '../shared/Stepper.jsx';
 import { PersonasLista } from '../evento/PersonasLista.jsx';
 import { fmtFechaLarga, fmtFechaCorta } from '../../utils/format.js';
 import { audit } from '../../data/audit.js';
+import { toUUID } from '../../data/cotizaciones.js';
 
 const DEFAULT_PERSONAS = [{ nombre: '', celular: '' }, { nombre: '', celular: '' }];
 
@@ -36,8 +37,11 @@ export function RemisionWizard({
   const [busy, setBusy] = useState(false);
 
   // Estado local de la remisión (editable). Si no había, arranca en blanco.
+  // Importante: cotizacionId debe ser el UUID de la cotización en la BD.
+  // El evento local puede tener id "legacy" (evt_xxx) si fue creado en
+  // esta sesión; toUUID lo traduce vía el cache del adapter.
   const [rem, setRem] = useState(() => remisionInicial || {
-    cotizacionId: evento.id,
+    cotizacionId: toUUID(evento.id),
     cotizacionVersion: evento.version || 1,
     personasMontaje: DEFAULT_PERSONAS,
     personasDesmontaje: DEFAULT_PERSONAS,

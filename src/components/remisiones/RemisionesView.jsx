@@ -4,6 +4,7 @@ import { PageHeader } from '../shared/PageHeader.jsx';
 import { EmptyState } from '../shared/EmptyState.jsx';
 import { fmtFechaCorta, fmtFechaLarga, money } from '../../utils/format.js';
 import { calcTotal } from '../../utils/calculos.js';
+import { toUUID } from '../../data/cotizaciones.js';
 import { RemisionWizard } from './RemisionWizard.jsx';
 import { RemisionDetail } from './RemisionDetail.jsx';
 
@@ -32,7 +33,9 @@ export function RemisionesView({
   const esBodegaOLog = ['jefe_bodega', 'coord_logistica', 'logistico_campo'].includes(currentUser.rol);
   const esComercial = currentUser.rol === 'asesor_comercial';
 
-  // Mapa por (cotizacionId-version) → remisión
+  // Mapa por (cotizacionId-version) → remisión.
+  // Las remisiones vienen con UUID; los eventos pueden tener id legacy.
+  // Usamos toUUID al hacer lookup para que el match funcione en ambos casos.
   const remisionPorCotizacion = useMemo(() => {
     const m = new Map();
     remisiones.forEach((r) => {
@@ -40,6 +43,9 @@ export function RemisionesView({
     });
     return m;
   }, [remisiones]);
+
+  const findRemisionForEvent = (ev) =>
+    remisionPorCotizacion.get(`${toUUID(ev.id)}|${ev.version || 1}`) || null;
 
   // Eventos vendidos visibles para este usuario
   const eventosVendidos = useMemo(() => {
@@ -56,7 +62,7 @@ export function RemisionesView({
     const finalizadas = [];
 
     eventosVendidos.forEach((ev) => {
-      const rem = remisionPorCotizacion.get(`${ev.id}|${ev.version || 1}`);
+      const rem = findRemisionForEvent(ev);
       if (!rem) {
         pendientes.push({ ev, rem: null });
       } else if (rem.finalizada) {
@@ -87,7 +93,7 @@ export function RemisionesView({
       setView('list');
       return null;
     }
-    const remActual = remisionPorCotizacion.get(`${ev.id}|${ev.version || 1}`) || null;
+    const remActual = findRemisionForEvent(ev) || null;
     return (
       <RemisionWizard
         evento={ev}

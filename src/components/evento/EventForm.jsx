@@ -25,7 +25,7 @@ import { validarDatosCliente, validarEventoBorrador } from '../../utils/validaci
 
 export function EventForm({
   initial, onCancel, onSave, onFinalize, onDelete, onNuevaVersion,
-  catalogo, allEvents, isNew
+  catalogo, allEvents, currentUser, isNew
 }) {
   const { setDirty, confirmLeave } = useDirtyGuard();
   const [ev, setEv] = useState(initial);
@@ -323,7 +323,7 @@ export function EventForm({
                 onFinalize={() => setShowConfirmFinalize(true)}
               />
             )}
-            {tab === 'logistica' && <TabEvento ev={ev} set={set} />}
+            {tab === 'logistica' && <TabEvento ev={ev} set={set} currentUser={currentUser} />}
             {tab === 'cotizador' && (
               <Cotizador
                 items={ev.items || []}

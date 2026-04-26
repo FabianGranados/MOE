@@ -64,24 +64,67 @@ export const newEvent = (numero, usuario) => ({
 
 export const diffDatos = (antes, despues, usuario) => {
   const cambios = [];
+  const ts = new Date().toISOString();
+  const mkCambio = (campo, label, a, b) => ({
+    id: `h_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`,
+    campo,
+    label,
+    anterior: String(a),
+    nuevo: String(b),
+    usuarioId: usuario?.id,
+    usuarioNombre: usuario?.nombre,
+    fecha: ts
+  });
+
   const getVal = (obj, path) => path.split('.').reduce((o, k) => o?.[k], obj);
   Object.keys(LABELS_CAMPOS).forEach((path) => {
     const a = getVal(antes, path) || '';
     const b = getVal(despues, path) || '';
-    if (String(a) !== String(b)) {
-      cambios.push({
-        id: `h_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`,
-        campo: path,
-        label: LABELS_CAMPOS[path],
-        anterior: String(a),
-        nuevo: String(b),
-        usuarioId: usuario?.id,
-        usuarioNombre: usuario?.nombre,
-        fecha: new Date().toISOString()
+    if (String(a) !== String(b)) cambios.push(mkCambio(path, LABELS_CAMPOS[path], a, b));
+  });
+
+  // Personas que reciben/entregan: array dinámico, comparamos por índice.
+  const ROLES_PERSONA = [
+    { key: 'personasMontaje',    rol: 'Recibe'  },
+    { key: 'personasDesmontaje', rol: 'Entrega' }
+  ];
+  ROLES_PERSONA.forEach(({ key, rol }) => {
+    const arrA = antes[key] || [];
+    const arrB = despues[key] || [];
+    const max = Math.max(arrA.length, arrB.length);
+    for (let i = 0; i < max; i++) {
+      const a = arrA[i] || {};
+      const b = arrB[i] || {};
+      const slot = i === 0 ? 'principal' : i === 1 ? 'backup' : `adicional ${i - 1}`;
+      ['nombre', 'celular'].forEach((f) => {
+        const av = a[f] || '';
+        const bv = b[f] || '';
+        if (av !== bv) {
+          cambios.push(mkCambio(
+            `${key}.${i}.${f}`,
+            `${rol} · ${slot} · ${f === 'nombre' ? 'nombre' : 'celular'}`,
+            av, bv
+          ));
+        }
       });
     }
   });
+
   return cambios;
+};
+
+// Una cotización "envió remisión a logística" si en su historial existe
+// una entrada especial con campo='_remision_enviada'. Usamos el historial
+// como fuente de verdad para no tener que tocar el schema de Supabase.
+export const isRemisionEnviada = (ev) =>
+  (ev?.historial || []).some((h) => h.campo === '_remision_enviada');
+
+export const getRemisionEnviadaInfo = (ev) => {
+  const entry = (ev?.historial || [])
+    .filter((h) => h.campo === '_remision_enviada')
+    .sort((a, b) => (a.fecha < b.fecha ? 1 : -1))[0];
+  if (!entry) return null;
+  return { fecha: entry.fecha || entry.nuevo, usuarioNombre: entry.usuarioNombre || '' };
 };
 
 export const clasificar = (ev) => {

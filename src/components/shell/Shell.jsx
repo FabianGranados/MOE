@@ -271,6 +271,7 @@ export function Shell({
                   onFinalize={finalizar}
                   catalogo={catalogo}
                   allEvents={events}
+                  currentUser={currentUser}
                   isNew
                 />
               )}
@@ -285,6 +286,7 @@ export function Shell({
                   onNuevaVersion={() => nuevaVersion(activeEv)}
                   catalogo={catalogo}
                   allEvents={events}
+                  currentUser={currentUser}
                 />
               )}
             </motion.div>

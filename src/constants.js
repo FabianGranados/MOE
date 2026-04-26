@@ -58,12 +58,17 @@ export const TEXTO_LEGAL_REMISION =
 export const FRANJAS = { manana: 'Mañana (9am - 12pm)', tarde: 'Tarde (1pm - 4pm)' };
 
 export const MOTIVOS_PERDIDA = [
-  'Precio alto', 'Fecha no disponible', 'Eligió otro proveedor',
+  'Precio alto', 'Fecha no disponible', 'Cambio de fecha', 'Eligió otro proveedor',
   'No respondió', 'Cambio de plan', 'Presupuesto cancelado', 'Otro'
 ];
 
 export const METODOS_PAGO = ['Transferencia', 'Efectivo', 'Tarjeta', 'Cheque'];
-export const BANCOS = ['BANCOLOMBIA', 'DAVIVIENDA', 'NEQUI', 'DAVIPLATA', 'B-REVE', 'OTRO'];
+export const BANCOS = [
+  'BANCOLOMBIA DECO', 'BANCOLOMBIA LOGIQ',
+  'DAVIVIENDA DECO', 'DAVIVIENDA LOGIQ',
+  'B-REVE DECO', 'B-REVE LOGIQ',
+  'NEQUI', 'DAVIPLATA', 'OTRO'
+];
 
 export const AVISO_PAGO_OTRO_BANCO =
   'Si el pago viene de otro banco puede tardar entre 24 y 72 horas en reflejarse.';

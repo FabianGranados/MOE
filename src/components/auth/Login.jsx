@@ -2,7 +2,11 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertCircle, ChevronRight, Eye, EyeOff, KeyRound, Loader2, Mail, Sparkles } from 'lucide-react';
 import { Avatar } from '../shared/Avatar.jsx';
+import { supabaseEnabled } from '../../data/supabase.js';
 
+// Atajos visibles SOLO en modo demo (localStorage). Cuando MOE corre contra
+// Supabase real, las contraseñas reales viven en auth.users y los atajos
+// hardcoded sólo confunden, así que se ocultan.
 const DEMOS = [
   { rol: 'Gerencia',         email: 'admin@decolounge.com.co',          pass: 'demo1234', color: 'bg-stone-900' },
   { rol: 'Dir. Comercial',   email: 'cordicomercial@decolounge.com.co', pass: 'demo1234', color: 'bg-rose-600' },
@@ -105,31 +109,33 @@ export function Login({ onLogin }) {
           </div>
         </div>
 
-        <div className="mt-5 card overflow-hidden">
-          <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
-            <span className="text-[11px] font-semibold text-fg-muted">Acceso rápido (demo)</span>
+        {!supabaseEnabled && (
+          <div className="mt-5 card overflow-hidden">
+            <div className="px-4 py-3 border-b border-border flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+              <span className="text-[11px] font-semibold text-fg-muted">Acceso rápido (demo)</span>
+            </div>
+            <div className="p-2">
+              {DEMOS.map((u) => (
+                <button
+                  key={u.email}
+                  onClick={() => {
+                    setEmail(u.email);
+                    setPassword(u.pass);
+                  }}
+                  className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-surface-sunken text-left transition"
+                >
+                  <Avatar name={u.rol} size="sm" color={u.color} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-semibold text-fg">{u.rol}</div>
+                    <div className="text-[10px] text-fg-subtle font-mono">{u.email}</div>
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-fg-subtle" />
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="p-2">
-            {DEMOS.map((u) => (
-              <button
-                key={u.email}
-                onClick={() => {
-                  setEmail(u.email);
-                  setPassword(u.pass);
-                }}
-                className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-surface-sunken text-left transition"
-              >
-                <Avatar name={u.rol} size="sm" color={u.color} />
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-semibold text-fg">{u.rol}</div>
-                  <div className="text-[10px] text-fg-subtle font-mono">{u.email}</div>
-                </div>
-                <ChevronRight className="w-3.5 h-3.5 text-fg-subtle" />
-              </button>
-            ))}
-          </div>
-        </div>
+        )}
 
         <div className="text-center mt-5 text-[10px] text-fg-subtle">
           v1.0 · Protegido por Decolounge

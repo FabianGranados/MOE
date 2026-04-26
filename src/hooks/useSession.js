@@ -64,26 +64,38 @@ export function useSession() {
     if (supabaseEnabled) {
       let mounted = true;
       (async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!mounted) return;
-        const u = await loadSupabaseUser(session?.user);
-        setCurrentUser(u);
-        setLoading(false);
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!mounted) return;
+          const u = await loadSupabaseUser(session?.user);
+          if (mounted) setCurrentUser(u);
+        } catch (e) {
+          console.warn('[useSession] getSession falló:', e);
+        } finally {
+          if (mounted) setLoading(false);
+        }
       })();
       const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
-        const u = await loadSupabaseUser(session?.user);
-        setCurrentUser(u);
+        try {
+          const u = await loadSupabaseUser(session?.user);
+          setCurrentUser(u);
+        } catch (e) {
+          console.warn('[useSession] onAuthStateChange:', e);
+        }
       });
       return () => { mounted = false; sub?.subscription?.unsubscribe(); };
     }
     // Modo demo: lee de localStorage
     (async () => {
-      const s = await loadJSON('session', null);
-      if (s) {
-        const u = USUARIOS.find((x) => x.id === s.userId);
-        if (u) setCurrentUser({ id: u.id, email: u.email, nombre: u.nombre, alias: u.alias, rol: u.rol });
+      try {
+        const s = await loadJSON('session', null);
+        if (s) {
+          const u = USUARIOS.find((x) => x.id === s.userId);
+          if (u) setCurrentUser({ id: u.id, email: u.email, nombre: u.nombre, alias: u.alias, rol: u.rol });
+        }
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     })();
   }, [loadSupabaseUser]);
 
@@ -120,15 +132,20 @@ export function useSession() {
   }, [loadSupabaseUser]);
 
   const logout = useCallback(async () => {
-    if (currentUser) {
-      audit({ modulo: 'auth', accion: 'logout', entidadTipo: 'usuario', entidadId: currentUser.id }, currentUser);
-    }
-    if (supabaseEnabled) {
-      await supabase.auth.signOut();
-    } else {
-      await storage.delete('session');
-    }
+    // Limpiar UI primero — si signOut o audit fallan, el usuario igual sale.
     setCurrentUser(null);
+    try {
+      if (currentUser) {
+        audit({ modulo: 'auth', accion: 'logout', entidadTipo: 'usuario', entidadId: currentUser.id }, currentUser);
+      }
+      if (supabaseEnabled) {
+        await supabase.auth.signOut();
+      } else {
+        await storage.delete('session');
+      }
+    } catch (e) {
+      console.warn('[useSession] logout error (sesión local ya cerrada):', e);
+    }
   }, [currentUser]);
 
   return { loading, currentUser, login, logout, session: currentUser };

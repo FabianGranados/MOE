@@ -93,11 +93,18 @@ export function Shell({
     const evFinal = { ...ev, finalizado: true, estado: 'EN ESPERA' };
     const idx = events.findIndex((x) => x.id === ev.id);
     const next = idx >= 0 ? events.map((x) => (x.id === ev.id ? evFinal : x)) : [evFinal, ...events];
-    await persistEvents(next);
-    toast.success('Cotización finalizada', { description: `${evFinal.numeroEvento}-${evFinal.version} quedó bloqueada` });
+    // Navegamos primero — si la persistencia falla, no dejamos al usuario
+    // atrapado en la pantalla del wizard sin saber qué pasó.
     setActiveId(null);
     setView('list');
     setSection('leads');
+    try {
+      await persistEvents(next);
+      toast.success('Cotización finalizada', { description: `${evFinal.numeroEvento}-${evFinal.version} quedó bloqueada` });
+    } catch (e) {
+      console.warn('[finalizar] persist falló:', e);
+      toast.error('No se pudo guardar el estado finalizado', { description: 'Reintenta desde la lista.' });
+    }
   };
 
   const marcarVendida = async (ev, datosOp) => {

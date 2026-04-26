@@ -26,18 +26,25 @@ export function useCotizaciones() {
   useEffect(() => {
     let mounted = true;
     (async () => {
-      if (supabaseEnabled) {
-        const events = await fetchAll();
-        if (!mounted) return;
-        setValue(events);
-        prevRef.current = events;
-        setHydrated(true);
-      } else {
-        const v = await loadJSON('events', []);
-        if (!mounted) return;
-        setValue(v);
-        prevRef.current = v;
-        setHydrated(true);
+      try {
+        if (supabaseEnabled) {
+          const events = await fetchAll();
+          if (!mounted) return;
+          setValue(events);
+          prevRef.current = events;
+        } else {
+          const v = await loadJSON('events', []);
+          if (!mounted) return;
+          setValue(v);
+          prevRef.current = v;
+        }
+      } catch (e) {
+        // Si falla la carga (RLS, red, etc.) no dejamos al usuario en
+        // pantalla de spinner para siempre — arrancamos vacío y que vea
+        // los errores en consola.
+        console.warn('[useCotizaciones] hidratación falló, arranco vacío:', e);
+      } finally {
+        if (mounted) setHydrated(true);
       }
     })();
     return () => { mounted = false; };

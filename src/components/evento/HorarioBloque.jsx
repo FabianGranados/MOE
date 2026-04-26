@@ -74,7 +74,9 @@ export function HorarioHora({ valor, onChange }) {
 
 export function HorarioBloque({ titulo, valor, onChange, fechaEvento, esDesmontaje }) {
   const esCerrado = valor.tipo === 'cerrado';
-  // En desmontaje quitamos "Día antes" — si se monta hoy, no se puede recoger ayer.
+  // Atajos contextuales:
+  //  · Desmontaje: nunca día antes (no recoges algo que no entregaste)
+  //  · Montaje: nunca día después (el evento ya pasó)
   const atajos = esDesmontaje
     ? [
         { label: 'Mismo día',   dias: 0 },
@@ -82,8 +84,7 @@ export function HorarioBloque({ titulo, valor, onChange, fechaEvento, esDesmonta
       ]
     : [
         { label: 'Día antes',   dias: -1 },
-        { label: 'Mismo día',   dias: 0 },
-        { label: 'Día después', dias: 1 }
+        { label: 'Mismo día',   dias: 0 }
       ];
 
   const aviso = (() => {

@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { ArrowLeft, Download, FileText, Lock, Plus, User } from 'lucide-react';
-import { fmtFechaCorta, fmtFechaLarga, money } from '../../utils/format.js';
-import { calcTotal } from '../../utils/calculos.js';
+import { fmtFechaCorta, fmtFechaLarga } from '../../utils/format.js';
 import { audit } from '../../data/audit.js';
 import { generarRemisionPDF } from './pdfRemision.js';
 
@@ -150,25 +149,18 @@ export function RemisionDetail({ evento, remision, currentUser, onBack, onAddAdd
           </Card>
         )}
 
-        <Card title={`Productos (${(evento?.items || []).length})`}>
+        <Card title={`Productos (${(evento?.items || []).length})`} hint="Sin precios — están en la cotización">
           <ul className="space-y-1.5 text-[11px]">
             {(evento?.items || []).map((it) => (
-              <li key={it.id} className="flex justify-between gap-3">
-                <span className="truncate">
-                  <span className="font-mono text-fg-muted">×{it.cantidad}</span> {it.nombre}
-                </span>
-                <span className="font-mono text-fg-muted whitespace-nowrap">
-                  {money((Number(it.precioManual ?? it.precioBase) || 0) * (Number(it.cantidad) || 1) * (Number(it.dias) || 1))}
-                </span>
+              <li key={it.id} className="flex items-baseline gap-3">
+                <span className="font-mono text-fg-muted whitespace-nowrap">×{it.cantidad}</span>
+                <span className="flex-1">{it.nombre}</span>
+                {(Number(it.dias) || 1) > 1 && (
+                  <span className="text-[10px] text-fg-subtle whitespace-nowrap">{it.dias} días</span>
+                )}
               </li>
             ))}
           </ul>
-          {evento && (
-            <div className="mt-3 pt-3 border-t border-border flex justify-between text-xs font-bold">
-              <span>Total</span>
-              <span className="font-mono">{money(calcTotal(evento))}</span>
-            </div>
-          )}
         </Card>
 
         {/* Otrosíes */}

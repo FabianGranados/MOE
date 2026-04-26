@@ -7,8 +7,7 @@
 // otrosíes).
 // =====================================================================
 
-import { calcTotal } from '../../utils/calculos.js';
-import { fmtFechaCorta, fmtFechaLarga, money } from '../../utils/format.js';
+import { fmtFechaCorta, fmtFechaLarga } from '../../utils/format.js';
 
 const FRANJAS = { manana: 'Mañana (9am - 12pm)', tarde: 'Tarde (1pm - 4pm)' };
 
@@ -142,17 +141,16 @@ export async function generarRemisionPDF(evento, remision) {
     y += altoPers + 6;
   }
 
-  // Tabla de productos
+  // Tabla de productos — SIN PRECIOS. La remisión sólo lleva descripciones
+  // y cantidades; los precios viven en la cotización.
   doc.setFillColor(28, 25, 23);
   doc.rect(margin, y, pageW - margin * 2, 7, 'F');
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
   doc.text('CANT', margin + 3, y + 5);
-  doc.text('PRODUCTO', margin + 18, y + 5);
-  doc.text('DÍAS', margin + 105, y + 5);
-  doc.text('VR. UNIT', margin + 125, y + 5, { align: 'right' });
-  doc.text('TOTAL', pageW - margin - 3, y + 5, { align: 'right' });
+  doc.text('PRODUCTO', margin + 22, y + 5);
+  doc.text('DÍAS', pageW - margin - 3, y + 5, { align: 'right' });
   y += 7;
 
   const items = evento.items || [];
@@ -165,29 +163,15 @@ export async function generarRemisionPDF(evento, remision) {
       doc.setFillColor(250, 250, 249);
       doc.rect(margin, y, pageW - margin * 2, 6, 'F');
     }
-    const nombre = doc.splitTextToSize(it.nombre || '', 80);
+    const nombre = doc.splitTextToSize(it.nombre || '', pageW - margin * 2 - 50);
     const cantidad = Number(it.cantidad) || 1;
     const dias = Number(it.dias) || 1;
-    const precio = Number(it.precioManual ?? it.precioBase) || 0;
-    const total = precio * cantidad * dias;
     doc.text(String(cantidad), margin + 3, y + 4);
-    doc.text(nombre[0] || '', margin + 18, y + 4);
-    doc.text(String(dias), margin + 105, y + 4);
-    doc.text(money(precio), margin + 125, y + 4, { align: 'right' });
-    doc.text(money(total), pageW - margin - 3, y + 4, { align: 'right' });
+    doc.text(nombre[0] || '', margin + 22, y + 4);
+    doc.text(String(dias), pageW - margin - 3, y + 4, { align: 'right' });
     y += 6;
   });
-
-  // Total
-  y += 2;
-  doc.setDrawColor(28, 25, 23);
-  doc.setLineWidth(0.4);
-  doc.line(margin, y, pageW - margin, y);
-  y += 5;
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.text(`Total: ${money(calcTotal(evento))}`, pageW - margin - 3, y, { align: 'right' });
-  y += 8;
+  y += 4;
 
   // Notas operativas
   if (remision.notasOperativas?.trim()) {

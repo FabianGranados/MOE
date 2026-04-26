@@ -37,18 +37,18 @@ export function useRemisiones() {
   useEffect(() => { refresh(); }, [refresh]);
 
   // Crea o actualiza la remisión (sólo si no está finalizada).
-  // Después del upsert refrescamos del server para reflejar lo que RLS permitió.
+  // Devuelve { ok, data, error } para que el caller muestre el motivo si falla.
   const save = useCallback(async (rem) => {
-    const saved = await upsertRemision(rem);
-    if (saved) await refresh();
-    return saved;
+    const result = await upsertRemision(rem);
+    if (result.ok) await refresh();
+    return result;
   }, [refresh]);
 
   // Finaliza la remisión: marca finalizada=true, llena fecha y correlativo.
   const finalize = useCallback(async (rem, cotizacion) => {
-    const saved = await finalizeRemision(rem, cotizacion);
-    if (saved) await refresh();
-    return saved;
+    const result = await finalizeRemision(rem, cotizacion);
+    if (result.ok) await refresh();
+    return result;
   }, [refresh]);
 
   // Anexa un otrosí. La UI debe refrescar para mostrarlo en la lista.

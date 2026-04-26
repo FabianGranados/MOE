@@ -268,17 +268,17 @@ export function Shell({
                   hydrated={remisionesApi.hydrated}
                   refresh={remisionesApi.refresh}
                   saveRemision={async (rem) => {
-                    const saved = await remisionesApi.save(rem);
-                    if (saved && !rem.id) {
+                    const result = await remisionesApi.save(rem);
+                    if (result?.ok && result.data && !rem.id) {
                       audit({
                         modulo: 'logistica',
                         accion: 'crear_remision',
                         entidadTipo: 'remision',
-                        entidadId: saved.id,
+                        entidadId: result.data.id,
                         observaciones: `Cotización ${rem.cotizacionId}`
                       }, currentUser);
                     }
-                    return saved;
+                    return result;
                   }}
                   finalizeRemision={remisionesApi.finalize}
                   addAddendum={remisionesApi.addNote}

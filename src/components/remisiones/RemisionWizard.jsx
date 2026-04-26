@@ -6,8 +6,7 @@ import { Confirm } from '../shared/Confirm.jsx';
 import { Fld } from '../shared/Fld.jsx';
 import { Stepper } from '../shared/Stepper.jsx';
 import { PersonasLista } from '../evento/PersonasLista.jsx';
-import { fmtFechaLarga, fmtFechaCorta, money } from '../../utils/format.js';
-import { calcTotal } from '../../utils/calculos.js';
+import { fmtFechaLarga, fmtFechaCorta } from '../../utils/format.js';
 import { audit } from '../../data/audit.js';
 
 const DEFAULT_PERSONAS = [{ nombre: '', celular: '' }, { nombre: '', celular: '' }];
@@ -49,8 +48,6 @@ export function RemisionWizard({
 
   const set = (patch) => setRem((p) => ({ ...p, ...patch }));
 
-  const total = useMemo(() => calcTotal(evento), [evento]);
-
   const validarPersonas = () => {
     const errores = [];
     const pm = (rem.personasMontaje || []).filter((p) => p?.nombre?.trim() && p?.celular?.trim());
@@ -61,9 +58,11 @@ export function RemisionWizard({
   };
 
   const guardarBorrador = async () => {
-    const saved = await onSave(rem);
-    if (saved) setRem((p) => ({ ...p, id: saved.id }));
-    return saved;
+    const result = await onSave(rem);
+    if (result?.ok && result.data) {
+      setRem((p) => ({ ...p, id: result.data.id }));
+    }
+    return result;
   };
 
   const onSiguiente = async () => {
@@ -73,9 +72,12 @@ export function RemisionWizard({
       const errs = validarPersonas();
       if (errs.length) { setErr(errs.join(' · ')); return; }
       setBusy(true);
-      const saved = await guardarBorrador();
+      const result = await guardarBorrador();
       setBusy(false);
-      if (!saved) { setErr('No se pudo guardar el borrador. Revisa permisos o conexión.'); return; }
+      if (!result?.ok) {
+        setErr(`No se pudo guardar el borrador: ${result?.error || 'sin detalle'}${result?.hint ? ' · Hint: ' + result.hint : ''}`);
+        return;
+      }
       setStep(2);
     }
   };
@@ -90,18 +92,25 @@ export function RemisionWizard({
     // Asegurarnos de tener id (guarda borrador si aún no se ha guardado)
     let actual = rem;
     if (!rem.id) {
-      const saved = await guardarBorrador();
-      if (!saved) { setBusy(false); setErr('No se pudo guardar antes de finalizar.'); return; }
-      actual = { ...rem, id: saved.id };
+      const result = await guardarBorrador();
+      if (!result?.ok) {
+        setBusy(false);
+        setErr(`No se pudo guardar antes de finalizar: ${result?.error || 'sin detalle'}`);
+        return;
+      }
+      actual = { ...rem, id: result.data.id };
     }
     const fin = await onFinalize(actual, evento);
     setBusy(false);
-    if (!fin) { setErr('No se pudo finalizar la remisión.'); return; }
+    if (!fin?.ok) {
+      setErr(`No se pudo finalizar la remisión: ${fin?.error || 'sin detalle'}`);
+      return;
+    }
     audit({
       modulo: 'logistica',
       accion: 'finalizar_remision',
       entidadTipo: 'remision',
-      entidadId: fin.id,
+      entidadId: fin.data.id,
       observaciones: `${evento.numeroEvento}-${evento.version || 1}`
     }, currentUser);
     toast.success('Remisión enviada a logística', { description: 'Bodega y logística la ven en tiempo real' });
@@ -145,7 +154,7 @@ export function RemisionWizard({
           transition={{ duration: 0.2 }}
         >
           {step === 0 && (
-            <ResumenEvento evento={evento} total={total} />
+            <ResumenEvento evento={evento} />
           )}
           {step === 1 && (
             <div className="space-y-4">
@@ -240,7 +249,7 @@ function Bloque({ titulo, children }) {
   );
 }
 
-function ResumenEvento({ evento, total }) {
+function ResumenEvento({ evento }) {
   return (
     <div className="space-y-4">
       <div className="bg-surface-sunken/50 border border-border rounded-xl p-4 space-y-2">
@@ -294,19 +303,17 @@ function ResumenEvento({ evento, total }) {
         <div className="text-[10px] font-bold uppercase tracking-wider text-fg-muted mb-2">Productos ({(evento.items || []).length})</div>
         <ul className="space-y-1.5 text-[11px]">
           {(evento.items || []).map((it) => (
-            <li key={it.id} className="flex justify-between gap-3">
-              <span className="truncate">
-                <span className="font-mono text-fg-muted">×{it.cantidad}</span> {it.nombre}
-              </span>
-              <span className="font-mono text-fg-muted whitespace-nowrap">
-                {money((Number(it.precioManual ?? it.precioBase) || 0) * (Number(it.cantidad) || 1) * (Number(it.dias) || 1))}
-              </span>
+            <li key={it.id} className="flex items-baseline gap-3">
+              <span className="font-mono text-fg-muted whitespace-nowrap">×{it.cantidad}</span>
+              <span className="flex-1">{it.nombre}</span>
+              {(Number(it.dias) || 1) > 1 && (
+                <span className="text-[10px] text-fg-subtle whitespace-nowrap">{it.dias} días</span>
+              )}
             </li>
           ))}
         </ul>
-        <div className="mt-3 pt-3 border-t border-border flex justify-between text-xs font-bold">
-          <span>Total {evento.tipoDocumento === 'COTIZACION' ? '(con IVA)' : '(sin IVA)'}</span>
-          <span className="font-mono">{money(total)}</span>
+        <div className="mt-3 pt-3 border-t border-border text-[10px] text-fg-subtle">
+          La remisión sólo lleva cantidades y descripciones — los precios viven en la cotización.
         </div>
       </div>
     </div>

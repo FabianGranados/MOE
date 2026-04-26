@@ -113,12 +113,12 @@ export async function fetchByCotizacion(cotizacionId, version = 1) {
 // ---------------------------------------------------------------------
 // UPSERT — guarda la remisión. Prohibido si ya está finalizada (RLS lo
 // rechaza pero validamos antes para dar feedback claro).
+// Devuelve { ok, data, error } para que la UI pueda mostrar el motivo.
 // ---------------------------------------------------------------------
 export async function upsertRemision(rem) {
-  if (!supabase) return null;
+  if (!supabase) return { ok: false, error: 'Supabase no está activo' };
   if (rem.finalizada) {
-    console.warn('[remisiones.upsert] no se puede editar una remisión finalizada');
-    return null;
+    return { ok: false, error: 'No se puede editar una remisión finalizada' };
   }
 
   const row = {
@@ -139,10 +139,11 @@ export async function upsertRemision(rem) {
     .single();
 
   if (error) {
-    console.warn('[remisiones.upsert]', error.message);
-    return null;
+    console.error('[remisiones.upsert] error completo:', error);
+    console.error('  → row enviado:', row);
+    return { ok: false, error: error.message, code: error.code, details: error.details, hint: error.hint };
   }
-  return rowToRemision(data, []);
+  return { ok: true, data: rowToRemision(data, []) };
 }
 
 // ---------------------------------------------------------------------
@@ -150,7 +151,9 @@ export async function upsertRemision(rem) {
 // El correlativo lo armamos como "<numeroEvento>-R-<version>"
 // ---------------------------------------------------------------------
 export async function finalizeRemision(rem, cotizacion) {
-  if (!supabase || !isUUID(rem.id)) return null;
+  if (!supabase || !isUUID(rem.id)) {
+    return { ok: false, error: 'Falta id de la remisión' };
+  }
 
   const correlativo = cotizacion?.numeroEvento
     ? `${cotizacion.numeroEvento}-R-${rem.cotizacionVersion || 1}`
@@ -168,10 +171,10 @@ export async function finalizeRemision(rem, cotizacion) {
     .single();
 
   if (error) {
-    console.warn('[remisiones.finalize]', error.message);
-    return null;
+    console.error('[remisiones.finalize] error completo:', error);
+    return { ok: false, error: error.message, code: error.code, details: error.details, hint: error.hint };
   }
-  return rowToRemision(data, []);
+  return { ok: true, data: rowToRemision(data, []) };
 }
 
 // ---------------------------------------------------------------------

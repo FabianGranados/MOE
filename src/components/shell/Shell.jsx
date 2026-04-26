@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import {
-  Briefcase, DollarSign, LayoutDashboard, Package, Sun, Truck
+  Briefcase, DollarSign, LayoutDashboard, Loader2, Package, Sun, Truck
 } from 'lucide-react';
 import { Sidebar } from './Sidebar.jsx';
 import { Topbar } from './Topbar.jsx';
@@ -20,6 +20,8 @@ import { useHotkey } from '../../hooks/useHotkey.js';
 import { useTheme } from '../../hooks/useTheme.js';
 import { useDirtyGuard } from '../../hooks/useDirtyGuard.jsx';
 import { newEvent, nextNumero, diffDatos } from '../../utils/eventos.js';
+import { nextNumeroFromDb } from '../../data/cotizaciones.js';
+import { supabaseEnabled } from '../../data/supabase.js';
 import { ErrorBoundary } from '../shared/ErrorBoundary.jsx';
 
 const MENU = [
@@ -44,6 +46,10 @@ export function Shell({
   const [view, setView] = useState('list');
   const [menuOpen, setMenuOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
+  // Cuando se abre una cotización nueva, computamos el siguiente número
+  // contra la base de datos (no contra la lista local) para evitar colisiones
+  // entre asesores. Hasta que llegue, el formulario no se renderiza.
+  const [newEventDraft, setNewEventDraft] = useState(null);
 
   const navigateTo = (k) => {
     if (!confirmLeave()) return;
@@ -51,15 +57,22 @@ export function Shell({
     setView('list');
     setActiveId(null);
   };
-  const openNew = () => {
+  const openNew = async () => {
     if (!confirmLeave()) return;
-    setView('new');
     setSection('leads');
+    setView('new');
+    let n = null;
+    if (supabaseEnabled) {
+      try { n = await nextNumeroFromDb(); } catch { /* fallback abajo */ }
+    }
+    if (!n) n = nextNumero(events); // fallback en demo o si la BD falla
+    setNewEventDraft(newEvent(n, currentUser));
   };
   const goBackToList = () => {
     if (!confirmLeave()) return;
     setView('list');
     setActiveId(null);
+    setNewEventDraft(null);
   };
 
   useHotkey('mod+k', () => setCmdOpen(true), []);
@@ -285,9 +298,15 @@ export function Shell({
                   currentUser={currentUser}
                 />
               )}
-              {view === 'new' && (
+              {view === 'new' && !newEventDraft && (
+                <div className="flex items-center justify-center py-20 text-sm text-fg-muted">
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Asignando número de cotización...
+                </div>
+              )}
+              {view === 'new' && newEventDraft && (
                 <EventForm
-                  initial={newEvent(nextNumero(events), currentUser)}
+                  initial={newEventDraft}
                   onCancel={goBackToList}
                   onSave={saveEvent}
                   onFinalize={finalizar}

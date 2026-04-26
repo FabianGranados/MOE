@@ -74,11 +74,17 @@ export function HorarioHora({ valor, onChange }) {
 
 export function HorarioBloque({ titulo, valor, onChange, fechaEvento, esDesmontaje }) {
   const esCerrado = valor.tipo === 'cerrado';
-  const atajos = [
-    { label: 'Día antes', dias: -1 },
-    { label: 'Mismo día', dias: 0 },
-    { label: 'Día después', dias: 1 }
-  ];
+  // En desmontaje quitamos "Día antes" — si se monta hoy, no se puede recoger ayer.
+  const atajos = esDesmontaje
+    ? [
+        { label: 'Mismo día',   dias: 0 },
+        { label: 'Día después', dias: 1 }
+      ]
+    : [
+        { label: 'Día antes',   dias: -1 },
+        { label: 'Mismo día',   dias: 0 },
+        { label: 'Día después', dias: 1 }
+      ];
 
   const aviso = (() => {
     if (!valor.fecha || !fechaEvento) return null;
@@ -107,7 +113,7 @@ export function HorarioBloque({ titulo, valor, onChange, fechaEvento, esDesmonta
           <CalendarClock className="w-3 h-3" /> Fecha *
         </div>
         {fechaEvento && (
-          <div className="grid grid-cols-3 gap-1.5 mb-2">
+          <div className={`grid gap-1.5 mb-2 ${atajos.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
             {atajos.map((a) => {
               const f = addDias(fechaEvento, a.dias);
               const activo = valor.fecha === f;

@@ -25,7 +25,8 @@ const TIPOS_PAGO = [
 ];
 
 export function ModalVender({ open, ev, onCancel, onConfirm }) {
-  const [notasBodega, setNotasBodega] = useState('');
+  // Las notas operativas para bodega/logística viven en la Remisión de
+  // Logística, NO acá. Por eso este modal sólo cierra la venta + el pago.
   const [confirmaHorarios, setConfirmaHorarios] = useState(true);
 
   // Pago
@@ -44,7 +45,6 @@ export function ModalVender({ open, ev, onCancel, onConfirm }) {
 
   useEffect(() => {
     if (open && ev) {
-      setNotasBodega('');
       setConfirmaHorarios(true);
       setTipoPago('ANTICIPO_50');
       setMonto(Math.round(total * 0.5));
@@ -90,14 +90,10 @@ export function ModalVender({ open, ev, onCancel, onConfirm }) {
       notas: notasPago,
       foto,
       tipoPago,
-      validado: false,
-      registradoEn: new Date().toISOString()
+      validado: false
     };
 
     onConfirm({
-      notasOperativas: notasBodega
-        ? `${ev.notasOperativas ? ev.notasOperativas + '\n\n--- Al marcar vendida ---\n' : ''}${notasBodega}`
-        : ev.notasOperativas || '',
       horariosConfirmados: confirmaHorarios,
       fechaConfirmacionVenta: new Date().toISOString(),
       pagoInicial: pago
@@ -311,20 +307,6 @@ export function ModalVender({ open, ev, onCancel, onConfirm }) {
             />
           </Fld>
         </div>
-
-        {/* Notas para bodega */}
-        <Fld
-          label="Notas para bodega y logística"
-          hint="Opcional · las verá el equipo operativo"
-        >
-          <textarea
-            value={notasBodega}
-            onChange={(e) => setNotasBodega(e.target.value)}
-            rows={3}
-            className="input resize-none"
-            placeholder="Ej: el cliente solicita mantelería extra de repuesto, acceso limitado en la mañana..."
-          />
-        </Fld>
 
         {err && (
           <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-lg p-3 text-xs text-red-800 dark:text-red-300 flex items-start gap-2">

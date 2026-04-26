@@ -1,3 +1,7 @@
+// Regex pragmático: algo@algo.algo. No cubre todos los corner cases del RFC 5322
+// pero atrapa los errores típicos (sin @, sin dominio, sin TLD).
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export const validarDatosCliente = (ev) => {
   const errores = [];
   if (!ev.comercial) errores.push('Comercial');
@@ -7,7 +11,10 @@ export const validarDatosCliente = (ev) => {
   if (!ev.numeroDocId?.trim()) errores.push('Número de documento');
   if (!ev.tipoCliente) errores.push('Tipo de cliente');
   if (!ev.contactoNombre?.trim()) errores.push('Nombre de contacto');
-  if (!ev.contactoTelefono?.trim() && !ev.contactoEmail?.trim()) errores.push('Teléfono o email');
+  if (!ev.contactoTelefono?.trim()) errores.push('Teléfono');
+  const email = ev.contactoEmail?.trim() || '';
+  if (!email) errores.push('Email');
+  else if (!EMAIL_RE.test(email)) errores.push('Email con formato válido (algo@dominio.com)');
   if (!ev.fechaEvento) errores.push('Fecha del evento');
   if (!ev.tipoEvento) errores.push('Tipo de evento');
   return errores;

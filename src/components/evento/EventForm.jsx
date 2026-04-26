@@ -19,7 +19,7 @@ import {
   FORMAS_PAGO, TIPO_EVENTO, TIPOS_CLIENTE, TIPOS_DOCUMENTO_COTIZACION,
   TIPOS_DOCUMENTO_ID, TIPOS_PERSONA
 } from '../../constants.js';
-import { buildMapsUrl, esMapsAutoUrl, money, tiempoRelativo } from '../../utils/format.js';
+import { buildMapsUrl, esMapsAutoUrl, hoy, money, tiempoRelativo } from '../../utils/format.js';
 import { aplicaIva } from '../../utils/calculos.js';
 import { validarDatosCliente, validarEventoBorrador } from '../../utils/validaciones.js';
 
@@ -525,7 +525,7 @@ function TabComercial({ ev, set, bloqueado, puedeEnviar, errores, onFinalize, mo
       <Section title="Datos del evento">
         <div className="grid md:grid-cols-2 gap-3">
           <Fld label="Fecha del evento" required>
-            <input type="date" value={ev.fechaEvento} onChange={(e) => set({ fechaEvento: e.target.value })} className="input" />
+            <input type="date" min={hoy()} value={ev.fechaEvento} onChange={(e) => set({ fechaEvento: e.target.value })} className="input" />
           </Fld>
           <Fld label="Tipo de evento" required>
             <select value={ev.tipoEvento} onChange={(e) => set({ tipoEvento: e.target.value })} className="input">

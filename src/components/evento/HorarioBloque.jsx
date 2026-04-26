@@ -1,7 +1,7 @@
 import { AlertCircle, CalendarClock } from 'lucide-react';
 import { Fld } from '../shared/Fld.jsx';
 import { FRANJAS } from '../../constants.js';
-import { addDias, diffDias, fmtFechaCorta } from '../../utils/format.js';
+import { addDias, diffDias, fmtFechaCorta, hoy } from '../../utils/format.js';
 
 export function HorarioHora({ valor, onChange }) {
   const esCerrado = valor.tipo === 'cerrado';
@@ -129,6 +129,7 @@ export function HorarioBloque({ titulo, valor, onChange, fechaEvento, esDesmonta
         )}
         <input
           type="date"
+          min={hoy()}
           value={valor.fecha || ''}
           onChange={(e) => onChange({ ...valor, fecha: e.target.value })}
           className="input"

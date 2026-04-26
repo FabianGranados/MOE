@@ -58,15 +58,26 @@ Esta es la fuente de verdad de qué está hecho y qué no. **Actualízalo** cuan
 
 ### ⏳ Pendiente (en orden sugerido)
 
-1. **Catálogo de productos a Supabase** — la tabla `productos` ya existe con seeds, pero `MOEApp.jsx:14` sigue usando `usePersistedState('catalogo', PRODUCTOS_INICIAL)`. Cada PC tiene su propio catálogo y los `producto_id` que guardan las cotizaciones quedan inconsistentes. **Patrón a seguir**: copiar el de cotizaciones — un `useCatalogo()` drop-in con la misma firma `[items, persist, hydrated]`. **Esto desbloquea todo lo demás**.
-2. **Rangos de comisión** — mismo problema, viven en localStorage. Crear tabla `rangos_comision` o guardarlos en una tabla `config` key-value.
-3. **Cablear audit log** — el módulo `src/data/audit.js` ya escribe a Supabase; falta llamarlo en eventos clave: login (parcial), crear cotización, cambio de estado, validar pago, crear/editar producto.
-4. **Pantalla de auditoría dentro de MOE** — para gerencia y contador externo. Lee de `audit_log` con filtros por entidad/usuario/fecha.
-5. **UI de los pilares 005a/b/c** — el SQL existe pero no hay pantallas:
+1. **Remisión de Logística (pilar 005b · prioridad alta)** — la cotización NO incluye personas que reciben/entregan ni notas operativas (decisión del comercial: en el momento de cotizar todavía no se sabe quién va a recibir). Esos datos viven en un documento separado, la **Remisión de Logística**, que se crea cuando el evento está confirmado y pagado (100% / 50% / crédito legalizado). Pendiente: pantalla, validaciones, lock, audit, integración con remisiones físicas.
+2. **Catálogo de productos a Supabase** — la tabla `productos` ya existe con seeds, pero `MOEApp.jsx:14` sigue usando `usePersistedState('catalogo', PRODUCTOS_INICIAL)`. Cada PC tiene su propio catálogo y los `producto_id` que guardan las cotizaciones quedan inconsistentes. **Patrón a seguir**: copiar el de cotizaciones — un `useCatalogo()` drop-in con la misma firma `[items, persist, hydrated]`.
+3. **Rangos de comisión** — mismo problema, viven en localStorage. Crear tabla `rangos_comision` o guardarlos en una tabla `config` key-value.
+4. **Cablear audit log** — el módulo `src/data/audit.js` ya escribe a Supabase; falta llamarlo en eventos clave: login (parcial), crear cotización, cambio de estado, validar pago, crear/editar producto.
+5. **Pantalla de auditoría dentro de MOE** — para gerencia y contador externo. Lee de `audit_log` con filtros por entidad/usuario/fecha.
+6. **UI de los pilares 005a/c** — el SQL existe pero no hay pantallas:
    - Financiero: gestión de empresas, bancos, gastos, retiros, conciliación
-   - Logística: vehículos, asignación de rutas, remisiones de salida/entrada, registro de daños
    - Inventario individual: vista por unidad con serial, historial de uso, mantenimientos
-6. **Workflows de aprobación** — tablas `workflow_types` y `workflow_steps` ya existen; falta UI para iniciar/aprobar/rechazar (pago a proveedor, descuento especial).
+7. **Workflows de aprobación** — tablas `workflow_types` y `workflow_steps` ya existen; falta UI para iniciar/aprobar/rechazar (pago a proveedor, descuento especial).
+
+## Flujo de la cotización (decisión de UX)
+
+- **Wizard SIEMPRE**, en 3 (o 4) pasos:
+  1. **Cliente** — datos del comprador
+  2. **Logística** — horario evento, dirección, ciudad, fecha + horario de montaje y desmontaje
+  3. **Productos** — catálogo y precios
+  4. **Pagos** — sólo aparece cuando `estado === 'VENDIDO'`
+- No hay modo pestañas. Editar una cotización existente reabre el wizard.
+- **Cotizaciones finalizadas** (`finalizado === true`): los pasos 1-3 se ven en modo readonly (`<fieldset disabled>`); el botón "Finalizar" desaparece. Para ajustar algo se crea una **versión nueva** (260001-2, 260001-3...) con el botón en la parte superior. La versión nueva arranca **desde cero** — no copia datos para evitar arrastrar valores viejos por error.
+- **No** se piden personas que reciben/entregan ni notas operativas en la cotización. Eso vive en la Remisión de Logística (Fase B, pendiente).
 
 ## Estructura
 

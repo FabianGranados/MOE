@@ -47,17 +47,8 @@ export const newEvent = (numero, usuario) => ({
   mapsUrl: '',
   montaje: { fecha: '', tipo: 'abierto', franja: 'manana', hora: '' },
   desmontaje: { fecha: '', tipo: 'abierto', franja: 'tarde', hora: '' },
-  personasMontaje: [
-    { nombre: '', celular: '' },
-    { nombre: '', celular: '' }
-  ],
-  personasDesmontaje: [
-    { nombre: '', celular: '' },
-    { nombre: '', celular: '' }
-  ],
-  contactoPrincipal: { nombre: '', celular: '' },
-  contactoBackup: { nombre: '', celular: '' },
-  notasOperativas: '',
+  // personasMontaje / personasDesmontaje / notasOperativas viven en la
+  // Remisión de Logística (Fase B), no en la cotización.
   pagos: [],
   historial: []
 });
@@ -83,48 +74,10 @@ export const diffDatos = (antes, despues, usuario) => {
     if (String(a) !== String(b)) cambios.push(mkCambio(path, LABELS_CAMPOS[path], a, b));
   });
 
-  // Personas que reciben/entregan: array dinámico, comparamos por índice.
-  const ROLES_PERSONA = [
-    { key: 'personasMontaje',    rol: 'Recibe'  },
-    { key: 'personasDesmontaje', rol: 'Entrega' }
-  ];
-  ROLES_PERSONA.forEach(({ key, rol }) => {
-    const arrA = antes[key] || [];
-    const arrB = despues[key] || [];
-    const max = Math.max(arrA.length, arrB.length);
-    for (let i = 0; i < max; i++) {
-      const a = arrA[i] || {};
-      const b = arrB[i] || {};
-      const slot = i === 0 ? 'principal' : i === 1 ? 'backup' : `adicional ${i - 1}`;
-      ['nombre', 'celular'].forEach((f) => {
-        const av = a[f] || '';
-        const bv = b[f] || '';
-        if (av !== bv) {
-          cambios.push(mkCambio(
-            `${key}.${i}.${f}`,
-            `${rol} · ${slot} · ${f === 'nombre' ? 'nombre' : 'celular'}`,
-            av, bv
-          ));
-        }
-      });
-    }
-  });
+  // Las personas que reciben/entregan se gestionan en la Remisión de
+  // Logística (Fase B), por eso no se rastrean acá.
 
   return cambios;
-};
-
-// Una cotización "envió remisión a logística" si en su historial existe
-// una entrada especial con campo='_remision_enviada'. Usamos el historial
-// como fuente de verdad para no tener que tocar el schema de Supabase.
-export const isRemisionEnviada = (ev) =>
-  (ev?.historial || []).some((h) => h.campo === '_remision_enviada');
-
-export const getRemisionEnviadaInfo = (ev) => {
-  const entry = (ev?.historial || [])
-    .filter((h) => h.campo === '_remision_enviada')
-    .sort((a, b) => (a.fecha < b.fecha ? 1 : -1))[0];
-  if (!entry) return null;
-  return { fecha: entry.fecha || entry.nuevo, usuarioNombre: entry.usuarioNombre || '' };
 };
 
 export const clasificar = (ev) => {

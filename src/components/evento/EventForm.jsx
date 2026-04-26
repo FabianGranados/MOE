@@ -2,17 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import {
-  ArrowLeft, ArrowRight, Calendar, CheckCircle2, DollarSign, FileText, Loader2, Lock, Package, Plus, Send, Share2, ShieldCheck, Trash2, User
+  ArrowLeft, ArrowRight, CheckCircle2, FileText, Loader2, Lock, Plus, Send, Share2, ShieldCheck, Trash2
 } from 'lucide-react';
 import { Confirm } from '../shared/Confirm.jsx';
 import { Fld } from '../shared/Fld.jsx';
 import { Stepper } from '../shared/Stepper.jsx';
 import { InputTel, InputEmail } from '../shared/Inputs.jsx';
 import { HorarioBloque, HorarioHora } from './HorarioBloque.jsx';
-import { PersonasLista } from './PersonasLista.jsx';
 import { useDirtyGuard } from '../../hooks/useDirtyGuard.jsx';
 import { Cotizador } from './Cotizador.jsx';
-import { TabEvento } from './TabEvento.jsx';
 import { TabPagos } from './TabPagos.jsx';
 import { ShareModal } from './ShareModal.jsx';
 import {
@@ -27,11 +25,9 @@ export function EventForm({
   initial, onCancel, onSave, onFinalize, onDelete, onNuevaVersion,
   catalogo, allEvents, currentUser, isNew
 }) {
-  const { setDirty, confirmLeave } = useDirtyGuard();
+  const { setDirty } = useDirtyGuard();
   const [ev, setEv] = useState(initial);
   const [wizardStep, setWizardStep] = useState(0);
-  const [mode, setMode] = useState(isNew ? 'wizard' : 'tabs');
-  const [tab, setTab] = useState('comercial');
   const [wizardErr, setWizardErr] = useState('');
   const [showConfirmFinalize, setShowConfirmFinalize] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
@@ -44,12 +40,16 @@ export function EventForm({
   const bloqueado = ev.finalizado === true;
   const vendido = ev.estado === 'VENDIDO';
   const perdido = ev.estado === 'PERDIDO';
-  // Cliente y Productos se bloquean al finalizar. Logística y Pagos siguen
-  // editables aunque esté vendida (el comercial necesita ajustar horarios,
-  // dirección, contactos, etc. después de la venta).
-  const datosClienteBloqueados = bloqueado;
   const autoSaveActivo = !perdido;
   const set = (patch) => setEv((p) => ({ ...p, ...patch }));
+
+  // Pasos del wizard. Pagos sólo aparece cuando ya está vendida.
+  const wizardSteps = [
+    { key: 'cliente',   label: 'Cliente',    hint: 'Datos del comprador' },
+    { key: 'logistica', label: 'Logística',  hint: 'Montaje y dirección' },
+    { key: 'productos', label: 'Productos',  hint: 'Cotizador' }
+  ];
+  if (vendido) wizardSteps.push({ key: 'pagos', label: 'Pagos', hint: 'Cobros y validaciones' });
 
   useEffect(() => {
     if (!autoSaveActivo) return;
@@ -93,15 +93,6 @@ export function EventForm({
 
   const errores = validarEventoBorrador(ev);
   const puedeEnviar = errores.length === 0;
-
-  const tabs = [
-    { k: 'comercial', l: 'Cliente',    i: User },
-    { k: 'logistica', l: 'Logística',  i: Calendar },
-    { k: 'cotizador', l: 'Productos',  i: Package }
-  ];
-  if (vendido) {
-    tabs.push({ k: 'pagos', l: 'Pagos', i: DollarSign });
-  }
 
   const handleDelete = () => {
     setDirty(false);
@@ -182,35 +173,28 @@ export function EventForm({
         </motion.div>
       )}
 
-      {mode === 'wizard' ? (
-        <div className="card p-5">
-          <Stepper
-            current={wizardStep}
-            steps={[
-              { key: 'cliente',   label: 'Cliente',    hint: 'Datos del comprador' },
-              { key: 'logistica', label: 'Logística',  hint: 'Montaje y dirección' },
-              { key: 'productos', label: 'Productos',  hint: 'Cotizador' }
-            ]}
-          />
+      <div className="card p-5">
+        <Stepper current={wizardStep} steps={wizardSteps} />
 
-          <motion.div
-            key={`wiz-${wizardStep}`}
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            {wizardStep === 0 && (
-              <TabComercial
-                ev={ev}
-                set={set}
-                bloqueado={bloqueado}
-                modoWizard
-              />
-            )}
-            {wizardStep === 1 && (
-              <TabLogistica ev={ev} set={set} />
-            )}
-            {wizardStep === 2 && (
+        <motion.div
+          key={`wiz-${wizardStep}`}
+          initial={{ opacity: 0, x: 10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          {wizardStep === 0 && (
+            <TabComercial
+              ev={ev}
+              set={set}
+              bloqueado={bloqueado}
+              modoWizard
+            />
+          )}
+          {wizardStep === 1 && (
+            <TabLogistica ev={ev} set={set} bloqueado={bloqueado} />
+          )}
+          {wizardStep === 2 && (
+            <fieldset disabled={bloqueado} className="disabled:opacity-80">
               <Cotizador
                 items={ev.items || []}
                 catalogo={catalogo}
@@ -221,130 +205,77 @@ export function EventForm({
                 fechaEvento={ev.fechaEvento}
                 evId={ev.id}
               />
-            )}
-          </motion.div>
-
-          {wizardErr && (
-            <div className="mt-4 bg-red-50 dark:bg-red-500/10 border-2 border-red-200 dark:border-red-500/30 rounded-xl p-3">
-              <strong className="text-xs text-red-900 dark:text-red-300">Faltan: {wizardErr}</strong>
-            </div>
+            </fieldset>
           )}
+          {wizardStep === 3 && vendido && (
+            <TabPagos ev={ev} set={set} />
+          )}
+        </motion.div>
 
-          <div className="mt-5 pt-5 border-t-2 border-border flex items-center justify-between gap-2">
-            {wizardStep > 0 ? (
-              <button onClick={() => { setWizardStep(wizardStep - 1); setWizardErr(''); }} className="btn-ghost">
-                <ArrowLeft className="w-3.5 h-3.5" /> Atrás
-              </button>
-            ) : <div />}
-
-            {wizardStep === 0 && (
-              <button
-                onClick={() => {
-                  const errs = validarDatosCliente(ev);
-                  if (errs.length) { setWizardErr(errs.join(', ')); return; }
-                  setWizardErr('');
-                  setWizardStep(1);
-                }}
-                className="btn-primary"
-              >
-                Siguiente <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            )}
-
-            {wizardStep === 1 && (
-              <button
-                onClick={() => {
-                  const errs = validarLogistica(ev);
-                  if (errs.length) { setWizardErr(errs.join(', ')); return; }
-                  setWizardErr('');
-                  setWizardStep(2);
-                }}
-                className="btn-primary"
-              >
-                Siguiente <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            )}
-
-            {wizardStep === 2 && (
-              <button
-                onClick={() => {
-                  if (!puedeEnviar) { setWizardErr(errores.join(', ')); return; }
-                  setWizardErr('');
-                  setShowConfirmFinalize(true);
-                }}
-                className="btn-success"
-              >
-                <Send className="w-3.5 h-3.5" /> Finalizar cotización
-              </button>
-            )}
+        {wizardErr && (
+          <div className="mt-4 bg-red-50 dark:bg-red-500/10 border-2 border-red-200 dark:border-red-500/30 rounded-xl p-3">
+            <strong className="text-xs text-red-900 dark:text-red-300">Faltan: {wizardErr}</strong>
           </div>
+        )}
+
+        <div className="mt-5 pt-5 border-t-2 border-border flex items-center justify-between gap-2">
+          {wizardStep > 0 ? (
+            <button onClick={() => { setWizardStep(wizardStep - 1); setWizardErr(''); }} className="btn-ghost">
+              <ArrowLeft className="w-3.5 h-3.5" /> Atrás
+            </button>
+          ) : <div />}
 
           {wizardStep === 0 && (
-            <div className="mt-3 text-center">
-              <button
-                onClick={() => setMode('tabs')}
-                className="text-[11px] text-fg-subtle hover:text-fg-muted underline underline-offset-2"
-              >
-                Prefiero ver todo como pestañas
-              </button>
-            </div>
+            <button
+              onClick={() => {
+                const errs = validarDatosCliente(ev);
+                if (errs.length) { setWizardErr(errs.join(', ')); return; }
+                setWizardErr('');
+                setWizardStep(1);
+              }}
+              className="btn-primary"
+            >
+              Siguiente <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {wizardStep === 1 && (
+            <button
+              onClick={() => {
+                const errs = validarLogistica(ev);
+                if (errs.length) { setWizardErr(errs.join(', ')); return; }
+                setWizardErr('');
+                setWizardStep(2);
+              }}
+              className="btn-primary"
+            >
+              Siguiente <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {wizardStep === 2 && !bloqueado && (
+            <button
+              onClick={() => {
+                if (!puedeEnviar) { setWizardErr(errores.join(', ')); return; }
+                setWizardErr('');
+                setShowConfirmFinalize(true);
+              }}
+              className="btn-success"
+            >
+              <Send className="w-3.5 h-3.5" /> Finalizar cotización
+            </button>
+          )}
+
+          {wizardStep === 2 && bloqueado && vendido && (
+            <button
+              onClick={() => setWizardStep(3)}
+              className="btn-primary"
+            >
+              Ver pagos <ArrowRight className="w-3.5 h-3.5" />
+            </button>
           )}
         </div>
-      ) : (
-        <div className="card overflow-hidden">
-          <div className="relative flex border-b border-border bg-surface-sunken overflow-x-auto scrollbar-none">
-            {tabs.map((t) => {
-              const Icon = t.i;
-              const active = tab === t.k;
-              return (
-                <button
-                  key={t.k}
-                  onClick={() => setTab(t.k)}
-                  className={`relative flex items-center gap-2 px-4 py-3 text-xs font-medium whitespace-nowrap transition ${
-                    active ? 'bg-surface text-fg' : 'text-fg-muted hover:text-fg'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" /> {t.l}
-                  {active && (
-                    <motion.div
-                      layoutId="event-tab-underline"
-                      className="absolute left-0 right-0 -bottom-px h-0.5 bg-brand rounded-full"
-                      transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="p-5">
-            {tab === 'comercial' && (
-              <TabComercial
-                ev={ev}
-                set={set}
-                bloqueado={datosClienteBloqueados}
-                puedeEnviar={puedeEnviar}
-                errores={errores}
-                onFinalize={() => setShowConfirmFinalize(true)}
-              />
-            )}
-            {tab === 'logistica' && <TabEvento ev={ev} set={set} currentUser={currentUser} />}
-            {tab === 'cotizador' && (
-              <Cotizador
-                items={ev.items || []}
-                catalogo={catalogo}
-                addItem={addItem}
-                updateItem={updateItem}
-                removeItem={removeItem}
-                events={allEvents || []}
-                fechaEvento={ev.fechaEvento}
-                evId={ev.id}
-              />
-            )}
-            {tab === 'pagos' && <TabPagos ev={ev} set={set} />}
-          </div>
-        </div>
-      )}
+      </div>
 
       <Confirm
         open={showConfirmFinalize}
@@ -643,18 +574,16 @@ function Section({ title, hint, children }) {
   );
 }
 
-function TabLogistica({ ev, set }) {
+function TabLogistica({ ev, set, bloqueado }) {
   const montaje = ev.montaje || { fecha: '', tipo: 'abierto', franja: 'manana', hora: '' };
   const desmontaje = ev.desmontaje || { fecha: '', tipo: 'abierto', franja: 'tarde', hora: '' };
   const horarioEvento = ev.horarioEvento || { tipo: 'abierto', franja: 'tarde', hora: '' };
-  const personasMontaje = ev.personasMontaje || [{ nombre: '', celular: '' }, { nombre: '', celular: '' }];
-  const personasDesmontaje = ev.personasDesmontaje || [{ nombre: '', celular: '' }, { nombre: '', celular: '' }];
 
   return (
-    <div className="space-y-5">
+    <fieldset disabled={bloqueado} className="space-y-5 disabled:opacity-80">
       <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-xl p-3 text-[11px] text-amber-900 dark:text-amber-300">
-        <strong>Importante:</strong> estos datos van en la cotización que se envía al cliente
-        y más adelante forman la <strong>Remisión de Entrega</strong> que usa logística.
+        <strong>Importante:</strong> estos datos van en la cotización que se envía al cliente.
+        Las personas que reciben/entregan y las notas operativas se definen luego en la <strong>Remisión de Logística</strong>.
       </div>
 
       <Section title="Horario del evento" hint="Formato 24h">
@@ -734,15 +663,6 @@ function TabLogistica({ ev, set }) {
           onChange={(m) => set({ montaje: m })}
           fechaEvento={ev.fechaEvento}
         />
-        <div className="mt-3">
-          <PersonasLista
-            titulo="Personas que reciben"
-            hint="Mínimo 2. Es clave para que logística pueda validar en sitio."
-            minimo={2}
-            personas={personasMontaje}
-            onChange={(p) => set({ personasMontaje: p })}
-          />
-        </div>
       </Section>
 
       <Section title="📤 Desmontaje / Recogida">
@@ -753,26 +673,7 @@ function TabLogistica({ ev, set }) {
           fechaEvento={ev.fechaEvento}
           esDesmontaje
         />
-        <div className="mt-3">
-          <PersonasLista
-            titulo="Personas que entregan"
-            hint="Mínimo 2. Deben ser quienes firmarán la devolución del material."
-            minimo={2}
-            personas={personasDesmontaje}
-            onChange={(p) => set({ personasDesmontaje: p })}
-          />
-        </div>
       </Section>
-
-      <Section title="Notas operativas" hint="Acceso, parqueo, ascensor, etc.">
-        <textarea
-          value={ev.notasOperativas || ''}
-          onChange={(e) => set({ notasOperativas: e.target.value })}
-          rows={3}
-          className="input resize-none"
-          placeholder="Ej: acceso por portería sur, parqueo restringido después de 6pm, ascensor de servicio disponible..."
-        />
-      </Section>
-    </div>
+    </fieldset>
   );
 }

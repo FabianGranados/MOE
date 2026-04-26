@@ -13,8 +13,9 @@ export const validarDatosCliente = (ev) => {
   return errores;
 };
 
-// Logística completa: datos que debe llevar la cotización para ir al
-// montaje y desmontaje. Todos obligatorios para finalizar.
+// Logística completa de la cotización. Todos obligatorios para finalizar.
+// Las personas que reciben/entregan NO se piden acá — eso vive en la
+// Remisión de Logística (Fase B), porque al cotizar todavía no se sabe.
 export const validarLogistica = (ev) => {
   const errores = [];
 
@@ -36,13 +37,6 @@ export const validarLogistica = (ev) => {
   const d = ev.desmontaje || {};
   if (!d.fecha) errores.push('Fecha de desmontaje');
   if (d.tipo === 'cerrado' && !d.hora) errores.push('Hora de desmontaje');
-
-  // Personas (mínimo 2 con nombre Y celular llenos en cada lado)
-  const pm = (ev.personasMontaje || []).filter((p) => p?.nombre?.trim() && p?.celular?.trim());
-  if (pm.length < 2) errores.push(`Personas que reciben (mínimo 2 con nombre y celular)`);
-
-  const pd = (ev.personasDesmontaje || []).filter((p) => p?.nombre?.trim() && p?.celular?.trim());
-  if (pd.length < 2) errores.push(`Personas que entregan (mínimo 2 con nombre y celular)`);
 
   return errores;
 };

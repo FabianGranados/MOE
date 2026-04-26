@@ -158,22 +158,17 @@ export function Shell({
   };
 
   const nuevaVersion = async (ev) => {
+    // Versión nueva arranca desde cero — el comercial pidió que no se
+    // copien los datos para evitar confusiones por dejar valores viejos.
+    // Conservamos sólo el numeroEvento (sigue siendo el mismo cliente)
+    // y la versión incrementada.
     const versiones = events.filter((e) => e.numeroEvento === ev.numeroEvento);
     const maxV = Math.max(...versiones.map((e) => e.version || 1));
+    const fresh = newEvent(ev.numeroEvento, currentUser);
     const clone = {
-      ...ev,
+      ...fresh,
       id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`,
-      version: maxV + 1,
-      finalizado: false,
-      estado: 'EN ESPERA',
-      pagos: [],
-      direccion: '',
-      mapsUrl: '',
-      montaje: { fecha: '', tipo: 'abierto', franja: 'manana', hora: '' },
-      desmontaje: { fecha: '', tipo: 'abierto', franja: 'tarde', hora: '' },
-      contactoPrincipal: { nombre: '', celular: '' },
-      contactoBackup: { nombre: '', celular: '' },
-      notasOperativas: ''
+      version: maxV + 1
     };
     await persistEvents([clone, ...events]);
     toast.success(`Versión ${clone.version} creada`, { description: 'Edita la nueva versión' });

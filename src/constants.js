@@ -89,7 +89,11 @@ export const RANGOS_COMISION_DEFAULT = [
 
 export const LABELS_CAMPOS = {
   direccion: 'Dirección',
+  ciudad: 'Ciudad',
   mapsUrl: 'Link Maps',
+  'horarioEvento.tipo': 'Tipo de horario',
+  'horarioEvento.franja': 'Franja horario',
+  'horarioEvento.hora': 'Hora exacta',
   'montaje.fecha': 'Fecha montaje',
   'montaje.tipo': 'Tipo montaje',
   'montaje.franja': 'Franja montaje',
@@ -97,12 +101,7 @@ export const LABELS_CAMPOS = {
   'desmontaje.fecha': 'Fecha desmontaje',
   'desmontaje.tipo': 'Tipo desmontaje',
   'desmontaje.franja': 'Franja desmontaje',
-  'desmontaje.hora': 'Hora desmontaje',
-  'contactoPrincipal.nombre': 'Contacto principal',
-  'contactoPrincipal.celular': 'Cel principal',
-  'contactoBackup.nombre': 'Contacto backup',
-  'contactoBackup.celular': 'Cel backup',
-  notasOperativas: 'Notas operativas'
+  'desmontaje.hora': 'Hora desmontaje'
 };
 
 export const REGLAS_PAGO = {

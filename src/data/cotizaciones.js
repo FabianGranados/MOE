@@ -319,27 +319,18 @@ export async function deleteEvent(id) {
 
 // ---------------------------------------------------------------------
 // NUMERACIÓN · '26xxxx' único por año
-// Lee el max(numero) del año actual, le suma 1.
-// Si no hay nada, arranca en YY0001.
+// Llama a la función SECURITY DEFINER public.next_cotizacion_numero()
+// que ignora la RLS (un asesor sólo vería SUS cotizaciones y calcularía
+// un número que ya está tomado por otro). Migración 010.
 // ---------------------------------------------------------------------
 export async function nextNumeroFromDb() {
   if (!supabase) return null;
-  const yy = String(new Date().getFullYear()).slice(-2);
-  const prefix = yy;
-  const { data, error } = await supabase
-    .from('cotizaciones')
-    .select('numero')
-    .like('numero', `${prefix}%`)
-    .order('numero', { ascending: false })
-    .limit(1);
+  const { data, error } = await supabase.rpc('next_cotizacion_numero');
   if (error) {
-    console.warn('[cotizaciones.nextNumero]', error.message);
-    return `${yy}0001`;
+    console.warn('[cotizaciones.nextNumero] rpc falló:', error.message);
+    return null;
   }
-  const last = data?.[0]?.numero;
-  if (!last) return `${yy}0001`;
-  const seq = parseInt(last.slice(2), 10) || 0;
-  return `${yy}${String(seq + 1).padStart(4, '0')}`;
+  return data;
 }
 
 // Helpers exportados (por si los necesita la UI o tests)

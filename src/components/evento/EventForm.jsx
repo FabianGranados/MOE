@@ -21,7 +21,7 @@ import {
 } from '../../constants.js';
 import { buildMapsUrl, esMapsAutoUrl, hoy, money, tiempoRelativo } from '../../utils/format.js';
 import { aplicaIva } from '../../utils/calculos.js';
-import { validarDatosCliente, validarEventoBorrador } from '../../utils/validaciones.js';
+import { validarDatosCliente, validarEventoBorrador, validarLogistica } from '../../utils/validaciones.js';
 
 export function EventForm({
   initial, onCancel, onSave, onFinalize, onDelete, onNuevaVersion,
@@ -253,7 +253,12 @@ export function EventForm({
 
             {wizardStep === 1 && (
               <button
-                onClick={() => { setWizardErr(''); setWizardStep(2); }}
+                onClick={() => {
+                  const errs = validarLogistica(ev);
+                  if (errs.length) { setWizardErr(errs.join(', ')); return; }
+                  setWizardErr('');
+                  setWizardStep(2);
+                }}
                 className="btn-primary"
               >
                 Siguiente <ArrowRight className="w-3.5 h-3.5" />

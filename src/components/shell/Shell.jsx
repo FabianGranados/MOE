@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import {
-  Briefcase, DollarSign, LayoutDashboard, Package, Sun
+  Briefcase, DollarSign, LayoutDashboard, Package, Sun, Truck
 } from 'lucide-react';
 import { Sidebar } from './Sidebar.jsx';
 import { Topbar } from './Topbar.jsx';
@@ -13,7 +13,9 @@ import { DashboardView } from '../dashboard/DashboardView.jsx';
 import { LeadsView } from '../leads/LeadsView.jsx';
 import { ComisionesView } from '../comisiones/ComisionesView.jsx';
 import { CatalogoView } from '../catalogo/CatalogoView.jsx';
+import { RemisionesView } from '../remisiones/RemisionesView.jsx';
 import { EventForm } from '../evento/EventForm.jsx';
+import { audit } from '../../data/audit.js';
 import { useHotkey } from '../../hooks/useHotkey.js';
 import { useTheme } from '../../hooks/useTheme.js';
 import { useDirtyGuard } from '../../hooks/useDirtyGuard.jsx';
@@ -24,13 +26,14 @@ const MENU = [
   { key: 'hoy',        label: 'HOY',                  short: 'Hoy',       icon: Sun,             roles: ['direccion_comercial', 'asesor_comercial'] },
   { key: 'dashboard',  label: 'Dashboard',            short: 'Dashboard', icon: LayoutDashboard, roles: ['gerencia_general', 'direccion_comercial', 'coord_admin_financiero', 'coord_admin_control'] },
   { key: 'leads',      label: 'Leads & Cotizaciones', short: 'Leads',     icon: Briefcase,       roles: ['gerencia_general', 'direccion_comercial', 'asesor_comercial', 'coord_admin_control', 'asistente_contable'] },
+  { key: 'remisiones', label: 'Remisiones de pedido', short: 'Remisiones',icon: Truck,           roles: ['gerencia_general', 'direccion_comercial', 'asesor_comercial', 'jefe_bodega', 'coord_logistica', 'logistico_campo'] },
   { key: 'comisiones', label: 'Comisiones',           short: 'Comisión',  icon: DollarSign,      roles: ['gerencia_general', 'direccion_comercial', 'asesor_comercial', 'coord_admin_financiero', 'contador_externo'] },
   { key: 'catalogo',   label: 'Catálogo',             short: 'Catálogo',  icon: Package,         roles: ['gerencia_general', 'direccion_comercial', 'asesor_comercial', 'jefe_bodega', 'coord_logistica'] }
 ];
 
 export function Shell({
   currentUser, events, persistEvents, catalogo, persistCatalogo,
-  rangosComision, persistRangos, onLogout
+  rangosComision, persistRangos, remisionesApi, onLogout
 }) {
   const { theme, toggle: toggleTheme } = useTheme();
   const { confirmLeave } = useDirtyGuard();
@@ -257,6 +260,30 @@ export function Shell({
               )}
               {view === 'list' && section === 'catalogo' && (
                 <CatalogoView catalogo={catalogo} persistCatalogo={persistCatalogo} currentUser={currentUser} />
+              )}
+              {view === 'list' && section === 'remisiones' && remisionesApi && (
+                <RemisionesView
+                  events={eventosVisibles}
+                  remisiones={remisionesApi.remisiones}
+                  hydrated={remisionesApi.hydrated}
+                  refresh={remisionesApi.refresh}
+                  saveRemision={async (rem) => {
+                    const saved = await remisionesApi.save(rem);
+                    if (saved && !rem.id) {
+                      audit({
+                        modulo: 'logistica',
+                        accion: 'crear_remision',
+                        entidadTipo: 'remision',
+                        entidadId: saved.id,
+                        observaciones: `Cotización ${rem.cotizacionId}`
+                      }, currentUser);
+                    }
+                    return saved;
+                  }}
+                  finalizeRemision={remisionesApi.finalize}
+                  addAddendum={remisionesApi.addNote}
+                  currentUser={currentUser}
+                />
               )}
               {view === 'new' && (
                 <EventForm

@@ -53,20 +53,22 @@ Esta es la fuente de verdad de qué está hecho y qué no. **Actualízalo** cuan
   - `005b_logistica.sql` — vehículos, rutas, remisiones, daños
   - `005c_inventario.sql` — inventario individual (unidades con serial, trazabilidad)
   - `006_usuarios_temporada.sql` — script para crear usuarios temporales
+  - `007_remisiones.sql` — extensión de `remisiones` con campos operativos + tabla `remision_addendum` (otrosíes) + RLS estricta por rol
 - **Auth real** (`src/hooks/useSession.js`) — login con email/password contra `auth.users` de Supabase, lee rol de la tabla `usuarios`. Fallback a usuarios demo si Supabase está apagado.
 - **Cotizaciones en la nube** (`src/data/cotizaciones.js` + `src/hooks/useCotizaciones.js`) — fetch en mount, diff/upsert en persist. RLS filtra: asesor sólo ve las suyas, gerencia ve todo.
+- **Remisión de Pedido (Fase B completa · migración 007)** — pantalla nueva en sidebar `Remisiones de pedido`. Tabla `remisiones` (extiende la del 005b) + tabla `remision_addendum` para otrosíes inmutables. El comercial llena un wizard de 3 pasos (resumen del evento → personas que reciben/entregan → notas operativas) y al finalizar el documento queda bloqueado y visible en tiempo real para bodega/logística. PDF descargable. Otrosíes anexables incluso después de finalizar (única forma de modificar). RLS estricta: asesor ve y crea sólo sus remisiones; bodega/logística sólo las finalizadas; gerencia/dirección ven todo. Archivos clave: `src/data/remisiones.js`, `src/hooks/useRemisiones.js`, `src/components/remisiones/{RemisionesView,RemisionWizard,RemisionDetail,pdfRemision}.jsx`.
 
 ### ⏳ Pendiente (en orden sugerido)
 
-1. **Remisión de Logística (pilar 005b · prioridad alta)** — la cotización NO incluye personas que reciben/entregan ni notas operativas (decisión del comercial: en el momento de cotizar todavía no se sabe quién va a recibir). Esos datos viven en un documento separado, la **Remisión de Logística**, que se crea cuando el evento está confirmado y pagado (100% / 50% / crédito legalizado). Pendiente: pantalla, validaciones, lock, audit, integración con remisiones físicas.
-2. **Catálogo de productos a Supabase** — la tabla `productos` ya existe con seeds, pero `MOEApp.jsx:14` sigue usando `usePersistedState('catalogo', PRODUCTOS_INICIAL)`. Cada PC tiene su propio catálogo y los `producto_id` que guardan las cotizaciones quedan inconsistentes. **Patrón a seguir**: copiar el de cotizaciones — un `useCatalogo()` drop-in con la misma firma `[items, persist, hydrated]`.
-3. **Rangos de comisión** — mismo problema, viven en localStorage. Crear tabla `rangos_comision` o guardarlos en una tabla `config` key-value.
-4. **Cablear audit log** — el módulo `src/data/audit.js` ya escribe a Supabase; falta llamarlo en eventos clave: login (parcial), crear cotización, cambio de estado, validar pago, crear/editar producto.
-5. **Pantalla de auditoría dentro de MOE** — para gerencia y contador externo. Lee de `audit_log` con filtros por entidad/usuario/fecha.
-6. **UI de los pilares 005a/c** — el SQL existe pero no hay pantallas:
+1. **Catálogo de productos a Supabase** — la tabla `productos` ya existe con seeds, pero `MOEApp.jsx:14` sigue usando `usePersistedState('catalogo', PRODUCTOS_INICIAL)`. Cada PC tiene su propio catálogo y los `producto_id` que guardan las cotizaciones quedan inconsistentes. **Patrón a seguir**: copiar el de cotizaciones — un `useCatalogo()` drop-in con la misma firma `[items, persist, hydrated]`.
+2. **Rangos de comisión** — mismo problema, viven en localStorage. Crear tabla `rangos_comision` o guardarlos en una tabla `config` key-value.
+3. **Cablear audit log** — el módulo `src/data/audit.js` ya escribe a Supabase; falta llamarlo en eventos clave: login (parcial), crear cotización, cambio de estado, validar pago, crear/editar producto. Remisiones ya queda cableado (crear, finalizar, addendum).
+4. **Pantalla de auditoría dentro de MOE** — para gerencia y contador externo. Lee de `audit_log` con filtros por entidad/usuario/fecha.
+5. **UI de los pilares 005a/c** — el SQL existe pero no hay pantallas:
    - Financiero: gestión de empresas, bancos, gastos, retiros, conciliación
    - Inventario individual: vista por unidad con serial, historial de uso, mantenimientos
-7. **Workflows de aprobación** — tablas `workflow_types` y `workflow_steps` ya existen; falta UI para iniciar/aprobar/rechazar (pago a proveedor, descuento especial).
+6. **Workflows de aprobación** — tablas `workflow_types` y `workflow_steps` ya existen; falta UI para iniciar/aprobar/rechazar (pago a proveedor, descuento especial).
+7. **Firma digital y fotos en remisión** — la tabla `remisiones` del 005b ya tiene los campos `firma_*`, `fotos_montaje`. Cuando llegue el flujo de logístico de campo, se enchufa esa parte para que firmen en sitio en celular.
 
 ## Flujo de la cotización (decisión de UX)
 

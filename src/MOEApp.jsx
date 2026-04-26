@@ -6,6 +6,7 @@ import { PRODUCTOS_INICIAL, RANGOS_COMISION_DEFAULT, ROLES } from './constants.j
 import { DirtyGuardProvider } from './hooks/useDirtyGuard.jsx';
 import { usePersistedState } from './hooks/usePersistedState.js';
 import { useCotizaciones } from './hooks/useCotizaciones.js';
+import { useRemisiones } from './hooks/useRemisiones.js';
 import { useSession } from './hooks/useSession.js';
 
 export default function MOEApp() {
@@ -13,6 +14,7 @@ export default function MOEApp() {
   const [events, persistEvents, eventsHydrated]       = useCotizaciones();
   const [catalogo, persistCatalogo, catalogoHydrated] = usePersistedState('catalogo', PRODUCTOS_INICIAL);
   const [rangos, persistRangos, rangosHydrated]       = usePersistedState('rangos-comision', RANGOS_COMISION_DEFAULT);
+  const remisionesApi = useRemisiones();
 
   if (loading || !eventsHydrated || !catalogoHydrated || !rangosHydrated) {
     return <SpinnerPage label="Cargando MOE..." />;
@@ -35,6 +37,7 @@ export default function MOEApp() {
         persistCatalogo={persistCatalogo}
         rangosComision={rangos}
         persistRangos={persistRangos}
+        remisionesApi={remisionesApi}
         onLogout={logout}
       />
     </DirtyGuardProvider>
